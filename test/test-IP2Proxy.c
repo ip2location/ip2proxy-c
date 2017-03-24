@@ -35,7 +35,7 @@ int main (){
 	}
 	*/
 
-	record = IP2Proxy_get_all(IP2ProxyObj, "1.0.132.72");
+	record = IP2Proxy_get_all(IP2ProxyObj, "8.8.8.8");
 
 	fprintf(stdout, "Module Version: %s\n", IP2Proxy_get_module_version());
 	fprintf(stdout, "Package Version: %s\n", IP2Proxy_get_package_version(IP2ProxyObj));
