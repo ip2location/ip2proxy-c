@@ -42,11 +42,11 @@ typedef struct ipv_t {
 	uint32_t ipv4;
 } ipv_t;
 
-uint8_t PROXY_TYPE_POSITION[5]	= {0, 0, 2, 2, 2};
-uint8_t COUNTRY_POSITION[5]		= {0, 3, 3, 3, 3};
-uint8_t REGION_POSITION[5]		= {0, 0, 0, 4, 4};
-uint8_t CITY_POSITION[5]		= {0, 0, 0, 5, 5};
-uint8_t ISP_POSITION[5]			= {0, 0, 0, 0, 6};
+uint8_t IP2PROXY_TYPE_POSITION[5]	= {0, 0, 2, 2, 2};
+uint8_t IP2PCOUNTRY_POSITION[5]		= {0, 2, 3, 3, 3};
+uint8_t IP2PREGION_POSITION[5]		= {0, 0, 0, 4, 4};
+uint8_t IP2PCITY_POSITION[5]		= {0, 0, 0, 5, 5};
+uint8_t IP2PISP_POSITION[5]			= {0, 0, 0, 0, 6};
 
 static int IP2Proxy_initialize(IP2Proxy *loc);
 static IP2ProxyRecord *IP2Proxy_new_record();
@@ -282,15 +282,15 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *loc, uint32_t rowaddr, uin
 	IP2ProxyRecord *record = IP2Proxy_new_record();
 	record->is_proxy = "-1";
 
-	if ((mode & ISPROXY) && (COUNTRY_POSITION[dbtype] != 0))
+	if ((mode & ISPROXY) && (IP2PCOUNTRY_POSITION[dbtype] != 0))
 	{
-		record->country_short = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (COUNTRY_POSITION[dbtype]-1)));
+		record->country_short = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PCOUNTRY_POSITION[dbtype]-1)));
 
 		if (strcmp(record->country_short, "-") == 0) {
 			record->is_proxy = "0";
 		}
 		else{
-			record->proxy_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (PROXY_TYPE_POSITION[dbtype]-1)));
+			record->proxy_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_TYPE_POSITION[dbtype]-1)));
 
 			if (strcmp(record->proxy_type, "DCH") == 0) {
 				record->is_proxy = "2";
@@ -305,54 +305,54 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *loc, uint32_t rowaddr, uin
 		record->is_proxy = "-1";
 	}
 
-	if ((mode & COUNTRYSHORT) && (COUNTRY_POSITION[dbtype] != 0))
+	if ((mode & COUNTRYSHORT) && (IP2PCOUNTRY_POSITION[dbtype] != 0))
 	{
-		record->country_short = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (COUNTRY_POSITION[dbtype]-1)));
+		record->country_short = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PCOUNTRY_POSITION[dbtype]-1)));
 	}
 	else
 	{
 		record->country_short = strdup(NOT_SUPPORTED);
 	}
 
-	if ((mode & COUNTRYLONG) && (COUNTRY_POSITION[dbtype] != 0))
+	if ((mode & COUNTRYLONG) && (IP2PCOUNTRY_POSITION[dbtype] != 0))
 	{
-		record->country_long = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (COUNTRY_POSITION[dbtype]-1))+3);
+		record->country_long = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PCOUNTRY_POSITION[dbtype]-1))+3);
 	}
 	else
 	{
 		record->country_long = strdup(NOT_SUPPORTED);
 	}
 
-	if ((mode & REGION) && (REGION_POSITION[dbtype] != 0))
+	if ((mode & REGION) && (IP2PREGION_POSITION[dbtype] != 0))
 	{
-		record->region = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (REGION_POSITION[dbtype]-1)));
+		record->region = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PREGION_POSITION[dbtype]-1)));
 	}
 	else
 	{
 		record->region = strdup(NOT_SUPPORTED);
 	}
 
-	if ((mode & CITY) && (CITY_POSITION[dbtype] != 0))
+	if ((mode & CITY) && (IP2PCITY_POSITION[dbtype] != 0))
 	{
-		record->city = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (CITY_POSITION[dbtype]-1)));
+		record->city = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PCITY_POSITION[dbtype]-1)));
 	}
 	else
 	{
 		record->city = strdup(NOT_SUPPORTED);
 	}
 
-	if ((mode & ISP) && (ISP_POSITION[dbtype] != 0))
+	if ((mode & ISP) && (IP2PISP_POSITION[dbtype] != 0))
 	{
-		record->isp = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (ISP_POSITION[dbtype]-1)));
+		record->isp = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PISP_POSITION[dbtype]-1)));
 	}
 	else
 	{
 		record->isp = strdup(NOT_SUPPORTED);
 	}
 
-	if ((mode & PROXYTYPE) && (PROXY_TYPE_POSITION[dbtype] != 0))
+	if ((mode & PROXYTYPE) && (IP2PROXY_TYPE_POSITION[dbtype] != 0))
 	{
-		record->proxy_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (PROXY_TYPE_POSITION[dbtype]-1)));
+		record->proxy_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_TYPE_POSITION[dbtype]-1)));
 	}
 	else
 	{
