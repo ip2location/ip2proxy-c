@@ -42,11 +42,11 @@ typedef struct ipv_t {
 	uint32_t ipv4;
 } ipv_t;
 
-uint8_t PROXY_TYPE_POSITION[5]	= {0, 0, 2, 2, 2};
-uint8_t COUNTRY_POSITION[5]		= {0, 3, 3, 3, 3};
-uint8_t REGION_POSITION[5]		= {0, 0, 0, 4, 4};
-uint8_t CITY_POSITION[5]		= {0, 0, 0, 5, 5};
-uint8_t ISP_POSITION[5]			= {0, 0, 0, 0, 6};
+uint8_t PROXY_TYPE_POSITION[5]  = {0, 0, 2, 2, 2};
+uint8_t COUNTRY_POSITION[5]     = {0, 2, 3, 3, 3};
+uint8_t REGION_POSITION[5]      = {0, 0, 0, 4, 4};
+uint8_t CITY_POSITION[5]        = {0, 0, 0, 5, 5};
+uint8_t ISP_POSITION[5]         = {0, 0, 0, 0, 6};
 
 static int IP2Proxy_initialize(IP2Proxy *loc);
 static IP2ProxyRecord *IP2Proxy_new_record();
@@ -127,7 +127,7 @@ IP2Proxy *IP2Proxy_open_csv(char *csv){
 // Description: This function to set the DB access type.
 int32_t IP2Proxy_open_mem(IP2Proxy *loc, enum IP2Proxy_mem_type mtype)
 {
-	if( loc == NULL)
+	if(loc == NULL)
 		return -1;
 
 	// Once IP2Proxy_open_mem is called, it can not be called again till IP2Proxy_close is called
@@ -155,7 +155,7 @@ int32_t IP2Proxy_open_mem(IP2Proxy *loc, enum IP2Proxy_mem_type mtype)
 uint32_t IP2Proxy_close(IP2Proxy *loc)
 {
 	openMemFlag = 0;
-	if (loc != NULL)
+	if(loc != NULL)
 	{
 		IP2Proxy_DB_close(loc->filehandle);
 		free(loc);
@@ -356,7 +356,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *loc, uint32_t rowaddr, uin
 	}
 	else
 	{
-		record->isp = strdup(NOT_SUPPORTED);
+		record->proxy_type = strdup(NOT_SUPPORTED);
 	}
 
 	return record;
@@ -576,7 +576,6 @@ static IP2ProxyRecord *IP2Proxy_get_record(IP2Proxy *loc, char *ipstring, uint32
 
 	if (parsed_ipv.ipversion == 4)
 	{
-
 		//process IPv4
 		return IP2Proxy_get_ipv4_record(loc, ipstring, mode, parsed_ipv);
 	}

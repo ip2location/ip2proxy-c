@@ -154,13 +154,8 @@ int32_t IP2Proxy_DB_set_shared_memory(FILE *filehandle)
         return -1;
     }
 
-    shm_fd = CreateFileMapping(
-                 INVALID_HANDLE_VALUE,
-                 NULL,
-                 PAGE_READWRITE,
-                 0,
-                 statbuf.st_size + 1,
-                 TEXT(IP2PROXY_SHM));
+    shm_fd = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, statbuf.st_size + 1, TEXT(IP2PROXY_SHM));
+
     if(shm_fd == NULL)
     {
         DB_access_type = IP2PROXY_FILE_IO;
@@ -169,12 +164,7 @@ int32_t IP2Proxy_DB_set_shared_memory(FILE *filehandle)
 
     DB_loaded = (GetLastError() == ERROR_ALREADY_EXISTS);
 
-    cache_shm_ptr = MapViewOfFile(
-                        shm_fd,
-                        FILE_MAP_WRITE,
-                        0,
-                        0,
-                        0);
+    cache_shm_ptr = MapViewOfFile(shm_fd, FILE_MAP_WRITE, 0, 0, 0);
 
     if(cache_shm_ptr == NULL)
     {
@@ -204,6 +194,7 @@ int32_t IP2Proxy_DB_Load_to_mem(FILE *filehandle, void *memory, int64_t size)
     fseek(filehandle, SEEK_SET, 0);
     if ( fread(memory, size, 1, filehandle) != 1 )
         return -1;
+
     return 0;
 }
 
@@ -343,10 +334,10 @@ float IP2Proxy_readFloat(FILE *handle, uint32_t position)
     // for SUN SPARC, have to reverse the byte order
     if (DB_access_type == IP2PROXY_FILE_IO && handle != NULL)
     {
-        fseek(handle, position-1, 0);
-        fread(p+3, 1, 1, handle);
-        fread(p+2, 1, 1, handle);
-        fread(p+1, 1, 1, handle);
+        fseek(handle, position - 1, 0);
+        fread(p + 3, 1, 1, handle);
+        fread(p + 2, 1, 1, handle);
+        fread(p + 1, 1, 1, handle);
         fread(p,   1, 1, handle);
     }
     else
@@ -359,7 +350,7 @@ float IP2Proxy_readFloat(FILE *handle, uint32_t position)
 #else
     if (DB_access_type == IP2PROXY_FILE_IO && handle != NULL)
     {
-        fseek(handle, position-1, 0);
+        fseek(handle, position - 1, 0);
         fread(&ret, 4, 1, handle);
     }
     else
