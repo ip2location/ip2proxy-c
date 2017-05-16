@@ -35,7 +35,7 @@
 #include <stdio.h>
 
 #include "IP2Proxy.h"
-#include "IP2Loc_DBInterface.h"
+#include "IP2Proxy_DB.h"
 
 typedef struct ipv_t {
 	uint32_t ipversion;
@@ -601,13 +601,6 @@ void IP2Proxy_free_record(IP2ProxyRecord *record)
 		return;
 	}
 
-	free(record->country_long);
-	free(record->country_short);
-	free(record->region);
-	free(record->city);
-	free(record->isp);
-	free(record->is_proxy);
-	free(record->proxy_type);
 	free(record);
 }
 

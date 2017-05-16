@@ -37,9 +37,9 @@
 
 
 #include "IP2Proxy.h"
-#include "IP2Loc_DBInterface.h"
+#include "IP2Proxy_DB.h"
 
-#define IP2PROXY_SHM "/IP2location_Shm"
+#define IP2PROXY_SHM "/IP2Proxy_Shm"
 #define MAP_ADDR 4194500608
 
 //Static variables

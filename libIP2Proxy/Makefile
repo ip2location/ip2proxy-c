@@ -120,7 +120,7 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libIP2Proxy_la_LIBADD =
-am_libIP2Proxy_la_OBJECTS = IP2Proxy.lo IP2Loc_DBInterface.lo
+am_libIP2Proxy_la_OBJECTS = IP2Proxy.lo IP2Proxy_DB.lo
 libIP2Proxy_la_OBJECTS = $(am_libIP2Proxy_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -319,9 +319,9 @@ AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = -I. -pipe -D _GNU_SOURCE
 AM_CXXFLAGS = -Wall -Werror
 lib_LTLIBRARIES = libIP2Proxy.la
-include_HEADERS = IP2Proxy.h IP2Loc_DBInterface.h 
+include_HEADERS = IP2Proxy.h IP2Proxy_DB.h 
 libIP2Proxy_la_SOURCES = IP2Proxy.c \
-							IP2Loc_DBInterface.c 
+							IP2Proxy_DB.c 
 
 libIP2Proxy_la_LDFLAGS = -module -no-undefined -version-info 1:0:0 
 all: all-am
@@ -403,8 +403,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/IP2Loc_DBInterface.Plo
 include ./$(DEPDIR)/IP2Proxy.Plo
+include ./$(DEPDIR)/IP2Proxy_DB.Plo
 
 .c.o:
 	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

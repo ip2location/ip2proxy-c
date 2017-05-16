@@ -35,7 +35,7 @@ int main (){
 	}
 	*/
 
-	record = IP2Proxy_get_all(IP2ProxyObj, "8.8.8.8");
+	record = IP2Proxy_get_all(IP2ProxyObj, "1.0.132.72");
 
 	fprintf(stdout, "Module Version: %s\n", IP2Proxy_get_module_version());
 	fprintf(stdout, "Package Version: %s\n", IP2Proxy_get_package_version(IP2ProxyObj));
@@ -49,6 +49,7 @@ int main (){
 	fprintf(stdout, "Proxy Type: %s\n", record->proxy_type);
 
 	IP2Proxy_close(IP2ProxyObj);
+	IP2Proxy_free_record(record);
 	IP2Proxy_delete_shm();
 
 	return 1;

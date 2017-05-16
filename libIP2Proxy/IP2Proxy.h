@@ -63,9 +63,9 @@ extern "C" {
 #endif
 #endif
 
-#include "IP2Loc_DBInterface.h"
+#include "IP2Proxy_DB.h"
 
-#define API_VERSION	1.0.0
+#define API_VERSION	1.0.1
 
 #define API_VERSION_MAJOR	1
 #define API_VERSION_MINOR	0
