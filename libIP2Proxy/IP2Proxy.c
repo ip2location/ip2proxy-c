@@ -640,17 +640,17 @@ char *IP2Proxy_get_module_version(void)
 }
 
 char *IP2Proxy_get_database_version(IP2Proxy *loc){
-	static char version[8];
+	static char version[3];
 
-	snprintf(version, sizeof(version), "%02d%02d%02d", loc->databaseyear, loc->databasemonth, loc->databaseday);
+	snprintf(version, sizeof(version), "%d", loc->databasetype);
 
 	return version;
 }
 
 char *IP2Proxy_get_package_version(IP2Proxy *loc){
-	static char version[3];
+	static char version[8];
 
-	snprintf(version, sizeof(version), "%d", loc->databasetype);
+	snprintf(version, sizeof(version), "%02d%02d%02d", loc->databaseyear, loc->databasemonth, loc->databaseday);
 
 	return version;
 }
