@@ -1,6 +1,6 @@
 /*
  * IP2Proxy C library is distributed under LGPL version 3
- * Copyright (c) 2013-2017 IP2Proxy.com. support at ip2location dot com
+ * Copyright (c) 2013-2019 IP2Proxy.com. support at ip2location dot com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,7 +65,7 @@ extern "C" {
 
 #include "IP2Proxy_DB.h"
 
-#define API_VERSION	1.0.3
+#define API_VERSION	1.1.0
 
 #define API_VERSION_MAJOR	1
 #define API_VERSION_MINOR	0
@@ -73,7 +73,9 @@ extern "C" {
 #define API_VERSION_NUMERIC (((API_VERSION_MAJOR * 100) + API_VERSION_MINOR) * 100 + API_VERSION_RELEASE)
 
 #define MAX_IPV4_RANGE	4294967295U
+#define MAX_IPV6_RANGE	"340282366920938463463374607431768211455"
 #define IPV4	0
+#define IPV6	1
 
 #define COUNTRYSHORT	0x00001
 #define COUNTRYLONG		0x00002
@@ -82,8 +84,13 @@ extern "C" {
 #define ISP				0x00010
 #define ISPROXY			0x00020
 #define PROXYTYPE		0x00040
+#define DOMAIN_			0x00080
+#define USAGETYPE		0x00100
+#define ASN				0x00200
+#define AS				0x00400
+#define LASTSEEN		0x00800
 
-#define ALL	COUNTRYSHORT | COUNTRYLONG | REGION | CITY | ISP | ISPROXY | PROXYTYPE
+#define ALL	COUNTRYSHORT | COUNTRYLONG | REGION | CITY | ISP | ISPROXY | PROXYTYPE | DOMAIN_ | USAGETYPE | ASN | AS | LASTSEEN
 
 #define DEFAULT			0x0001
 #define NO_EMPTY_STRING	0x0002
@@ -91,8 +98,8 @@ extern "C" {
 #define NO_TRAILING		0x0008
 
 #define INVALID_IPV4_ADDRESS "INVALID IPV4 ADDRESS"
+#define INVALID_IPV6_ADDRESS "INVALID IPV6 ADDRESS"
 #define NOT_SUPPORTED "NOT SUPPORTED"
-
 
 typedef struct
 {
@@ -109,6 +116,9 @@ typedef struct
 	uint32_t ipv4databasecount;
 	uint32_t ipv4databaseaddr;
 	uint32_t ipv4indexbaseaddr;
+	uint32_t ipv6databasecount;
+	uint32_t ipv6databaseaddr;
+	uint32_t ipv6indexbaseaddr;
 } IP2Proxy;
 
 typedef struct
@@ -120,6 +130,11 @@ typedef struct
 	char *isp;
 	char *is_proxy;
 	char *proxy_type;
+	char *domain;
+	char *usage_type;
+	char *asn;
+	char *as;
+	char *last_seen;
 } IP2ProxyRecord;
 
 /*##################
@@ -136,6 +151,11 @@ IP2ProxyRecord *IP2Proxy_get_city (IP2Proxy *loc, char *ip);
 IP2ProxyRecord *IP2Proxy_get_isp(IP2Proxy *loc, char *ip);
 IP2ProxyRecord *IP2Proxy_is_proxy(IP2Proxy *loc, char *ip);
 IP2ProxyRecord *IP2Proxy_get_proxy_type(IP2Proxy *loc, char *ip);
+IP2ProxyRecord *IP2Proxy_get_domain(IP2Proxy *loc, char *ip);
+IP2ProxyRecord *IP2Proxy_get_usage_type(IP2Proxy *loc, char *ip);
+IP2ProxyRecord *IP2Proxy_get_asn(IP2Proxy *loc, char *ip);
+IP2ProxyRecord *IP2Proxy_get_as(IP2Proxy *loc, char *ip);
+IP2ProxyRecord *IP2Proxy_get_last_seen(IP2Proxy *loc, char *ip);
 IP2ProxyRecord *IP2Proxy_get_all(IP2Proxy *loc, char *ip);
 void IP2Proxy_free_record(IP2ProxyRecord *record);
 void IP2Proxy_delete_shm();

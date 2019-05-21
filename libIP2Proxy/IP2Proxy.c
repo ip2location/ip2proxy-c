@@ -1,6 +1,6 @@
 /*
  * IP2Proxy C library is distributed under LGPL version 3
- * Copyright (c) 2013-2017 IP2Proxy.com. support at ip2location dot com
+ * Copyright (c) 2013-2019 IP2Proxy.com. support at ip2location dot com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,19 +40,28 @@
 typedef struct ipv_t {
 	uint32_t ipversion;
 	uint32_t ipv4;
+	struct in6_addr_local ipv6;
 } ipv_t;
 
-uint8_t IP2PROXY_PROXY_TYPE_POSITION[5]  = {0, 0, 2, 2, 2};
-uint8_t IP2PROXY_COUNTRY_POSITION[5]     = {0, 2, 3, 3, 3};
-uint8_t IP2PROXY_REGION_POSITION[5]      = {0, 0, 0, 4, 4};
-uint8_t IP2PROXY_CITY_POSITION[5]        = {0, 0, 0, 5, 5};
-uint8_t IP2PROXY_ISP_POSITION[5]         = {0, 0, 0, 0, 6};
+uint8_t IP2PROXY_COUNTRY_POSITION[9]     = {0,   2,   3,   3,   3,   3,   3,   3,   3};
+uint8_t IP2PROXY_REGION_POSITION[9]      = {0,   0,   0,   4,   4,   4,   4,   4,   4};
+uint8_t IP2PROXY_CITY_POSITION[9]        = {0,   0,   0,   5,   5,   5,   5,   5,   5};
+uint8_t IP2PROXY_ISP_POSITION[9]         = {0,   0,   0,   0,   6,   6,   6,   6,   6};
+uint8_t IP2PROXY_PROXY_TYPE_POSITION[9]  = {0,   0,   2,   2,   2,   2,   2,   2,   2};
+uint8_t IP2PROXY_DOMAIN_POSITION[9]      = {0,   0,   0,   0,   0,   7,   7,   7,   7};
+uint8_t IP2PROXY_USAGE_TYPE_POSITION[9]  = {0,   0,   0,   0,   0,   0,   8,   8,   8};
+uint8_t IP2PROXY_ASN_POSITION[9]         = {0,   0,   0,   0,   0,   0,   0,   9,   9};
+uint8_t IP2PROXY_AS_POSITION[9]          = {0,   0,   0,   0,   0,   0,   0,  10,  10};
+uint8_t IP2PROXY_LAST_SEEN_POSITION[9]   = {0,   0,   0,   0,   0,   0,   0,   0,  11};
 
 static int IP2Proxy_initialize(IP2Proxy *loc);
 static IP2ProxyRecord *IP2Proxy_new_record();
 static uint32_t IP2Proxy_ip2no(char* ip);
+static struct in6_addr_local IP2Proxy_ipv6_to_no(char* ipaddr);
 static int IP2Proxy_ip_is_ipv4 (char* ipaddr);
+static int IP2Proxy_ip_is_ipv6 (char* ipaddr);
 static IP2ProxyRecord *IP2Proxy_get_record(IP2Proxy *loc, char *ip, uint32_t mode);
+static IP2ProxyRecord *IP2Proxy_get_ipv6_record(IP2Proxy *loc, char *ipstring, uint32_t mode, ipv_t parsed_ipv);
 void str_replace(char *target, const char *needle, const char *replacement);
 static int32_t openMemFlag = 0;
 
@@ -186,10 +195,34 @@ static int IP2Proxy_initialize(IP2Proxy *loc)
 
 	loc->ipv4databasecount  = IP2Proxy_read32(loc->filehandle, 6);
 	loc->ipv4databaseaddr   = IP2Proxy_read32(loc->filehandle, 10);
-
 	loc->ipv4indexbaseaddr 	= IP2Proxy_read32(loc->filehandle, 22);
 
+	loc->ipv6databasecount  = IP2Proxy_read32(loc->filehandle, 14);
+	loc->ipv6databaseaddr   = IP2Proxy_read32(loc->filehandle, 18);
+	loc->ipv6indexbaseaddr 	= IP2Proxy_read32(loc->filehandle, 26);
+
 	return 0;
+}
+
+// Description: Compare to ipv6 address
+int ipv6_compare(struct in6_addr_local *addr1, struct in6_addr_local *addr2)
+{
+    int i, ret = 0;
+    for(i = 0 ; i < 16 ; i++ )
+    {
+        if(addr1->u.addr8[i] > addr2->u.addr8[i])
+        {
+            ret = 1;
+            break;
+        }
+        else if(addr1->u.addr8[i] < addr2->u.addr8[i])
+        {
+            ret = -1;
+            break;
+        }
+    }
+
+    return ret;
 }
 
 // Parses IPv[46] addresses and returns both the version of address
@@ -198,18 +231,37 @@ static int IP2Proxy_initialize(IP2Proxy *loc)
 // ipversion will be -1 on error (or something other than 4 or 6)
 static ipv_t IP2Proxy_parse_addr(const char *addr)
 {
-	ipv_t parsed;
-	if (IP2Proxy_ip_is_ipv4((char *)addr))
-	{
-		parsed.ipversion = 4;
-		parsed.ipv4 = IP2Proxy_ip2no((char *)addr);
-	}
-	else
-	{
-		parsed.ipversion = -1;
-	}
+    ipv_t parsed;
+    if (IP2Proxy_ip_is_ipv4((char *)addr))
+    {
+        parsed.ipversion = 4;
+        parsed.ipv4 = IP2Proxy_ip2no((char *)addr);
+    }
+    else if (IP2Proxy_ip_is_ipv6((char *)addr))
+    {
+        // Parse the v6 address
+        inet_pton(AF_INET6, addr, &parsed.ipv6);
+        if (parsed.ipv6.u.addr8[0] == 0 && parsed.ipv6.u.addr8[1] == 0 && parsed.ipv6.u.addr8[2] == 0 &&
+                parsed.ipv6.u.addr8[3] == 0 && parsed.ipv6.u.addr8[4] == 0 && parsed.ipv6.u.addr8[5] == 0 &&
+                parsed.ipv6.u.addr8[6] == 0 && parsed.ipv6.u.addr8[7] == 0 && parsed.ipv6.u.addr8[8] == 0 &&
+                parsed.ipv6.u.addr8[9] == 0 && parsed.ipv6.u.addr8[10] == 255 && parsed.ipv6.u.addr8[11] == 255)
+        {
+            // IPv4 address in IPv6 format (::ffff:0.0.0.0 or ::ffff:00:00)
+            parsed.ipversion = 4;
+            parsed.ipv4 = (parsed.ipv6.u.addr8[12] << 24) + (parsed.ipv6.u.addr8[13] << 16) + (parsed.ipv6.u.addr8[14] << 8) + parsed.ipv6.u.addr8[15];
+        }
+        else
+        {
+            // pure IPv6 format
+            parsed.ipversion = 6;
+        }
+    }
+    else
+    {
+        parsed.ipversion = -1;
+    }
 
-	return parsed;
+    return parsed;
 }
 
 // Description: Get country code
@@ -254,6 +306,36 @@ IP2ProxyRecord *IP2Proxy_get_proxy_type(IP2Proxy *loc, char *ip)
 	return IP2Proxy_get_record(loc, ip, PROXYTYPE);
 }
 
+// Description: Get Domain
+IP2ProxyRecord *IP2Proxy_get_domain(IP2Proxy *loc, char *ip)
+{
+	return IP2Proxy_get_record(loc, ip, DOMAIN_);
+}
+
+// Description: Get Usage type
+IP2ProxyRecord *IP2Proxy_get_usage_type(IP2Proxy *loc, char *ip)
+{
+	return IP2Proxy_get_record(loc, ip, USAGETYPE);
+}
+
+// Description: Get ASN
+IP2ProxyRecord *IP2Proxy_get_asn(IP2Proxy *loc, char *ip)
+{
+	return IP2Proxy_get_record(loc, ip, ASN);
+}
+
+// Description: Get AS
+IP2ProxyRecord *IP2Proxy_get_as(IP2Proxy *loc, char *ip)
+{
+	return IP2Proxy_get_record(loc, ip, AS);
+}
+
+// Description: Get Last seen
+IP2ProxyRecord *IP2Proxy_get_last_seen(IP2Proxy *loc, char *ip)
+{
+	return IP2Proxy_get_record(loc, ip, LASTSEEN);
+}
+
 // Description: Get all records of an IP address
 IP2ProxyRecord *IP2Proxy_get_all(IP2Proxy *loc, char *ip)
 {
@@ -271,6 +353,11 @@ static IP2ProxyRecord *IP2Proxy_bad_record(const char *message)
 	record->isp = strdup(message);
 	record->is_proxy = "-1";
 	record->proxy_type = strdup(message);
+	record->domain = strdup(message);
+	record->usage_type = strdup(message);
+	record->asn = strdup(message);
+	record->as = strdup(message);
+	record->last_seen = strdup(message);
 
 	return record;
 }
@@ -360,7 +447,111 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *loc, uint32_t rowaddr, uin
 		record->proxy_type = strdup(NOT_SUPPORTED);
 	}
 
+	if ((mode & DOMAIN_) && (IP2PROXY_DOMAIN_POSITION[dbtype] != 0))
+	{
+		record->domain = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_DOMAIN_POSITION[dbtype]-1)));
+	}
+	else
+	{
+		record->domain = strdup(NOT_SUPPORTED);
+	}
+
+	if ((mode & USAGETYPE) && (IP2PROXY_USAGE_TYPE_POSITION[dbtype] != 0))
+	{
+		record->usage_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_USAGE_TYPE_POSITION[dbtype]-1)));
+	}
+	else
+	{
+		record->usage_type = strdup(NOT_SUPPORTED);
+	}
+
+	if ((mode & ASN) && (IP2PROXY_ASN_POSITION[dbtype] != 0))
+	{
+		record->asn = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_ASN_POSITION[dbtype]-1)));
+	}
+	else
+	{
+		record->asn = strdup(NOT_SUPPORTED);
+	}
+
+	if ((mode & AS) && (IP2PROXY_AS_POSITION[dbtype] != 0))
+	{
+		record->as = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_AS_POSITION[dbtype]-1)));
+	}
+	else
+	{
+		record->as = strdup(NOT_SUPPORTED);
+	}
+
+	if ((mode & LASTSEEN) && (IP2PROXY_LAST_SEEN_POSITION[dbtype] != 0))
+	{
+		record->last_seen = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_LAST_SEEN_POSITION[dbtype]-1)));
+	}
+	else
+	{
+		record->last_seen = strdup(NOT_SUPPORTED);
+	}
+
 	return record;
+}
+
+// Description: Get record for a IPv6 from database
+static IP2ProxyRecord *IP2Proxy_get_ipv6_record(IP2Proxy *loc, char *ipstring, uint32_t mode, ipv_t parsed_ipv)
+{
+    FILE *handle = loc->filehandle;
+    uint32_t baseaddr = loc->ipv6databaseaddr;
+    uint32_t dbcolumn = loc->databasecolumn;
+    uint32_t ipv6indexbaseaddr = loc->ipv6indexbaseaddr;
+
+    uint32_t low = 0;
+    uint32_t high = loc->ipv6databasecount;
+    uint32_t mid = 0;
+
+    struct in6_addr_local ipfrom;
+    struct in6_addr_local ipto;
+    struct in6_addr_local ipno;
+
+    ipno = parsed_ipv.ipv6;
+
+    if (!high)
+    {
+        return NULL;
+    }
+
+    if (ipv6indexbaseaddr > 0)
+    {
+        // use the index table
+        uint32_t ipnum1 = (ipno.u.addr8[0] * 256) + ipno.u.addr8[1];
+        uint32_t indexpos = ipv6indexbaseaddr + (ipnum1 << 3);
+
+        low = IP2Proxy_read32(handle, indexpos);
+        high = IP2Proxy_read32(handle, indexpos + 4);
+
+    }
+
+    while (low <= high)
+    {
+        mid = (uint32_t)((low + high) >> 1);
+        ipfrom = IP2Proxy_readIPv6Address(handle, baseaddr + mid * (dbcolumn * 4 + 12));
+        ipto = IP2Proxy_readIPv6Address(handle, baseaddr + ( mid + 1 ) * (dbcolumn * 4 + 12));
+
+        if( (ipv6_compare(&ipno, &ipfrom) >= 0) && (ipv6_compare(&ipno, &ipto) < 0))
+        {
+            return IP2Proxy_read_record(loc, baseaddr + mid * (dbcolumn * 4 + 12) + 12, mode);
+        }
+        else
+        {
+            if ( ipv6_compare(&ipno, &ipfrom) < 0)
+            {
+                high = mid - 1;
+            }
+            else
+            {
+                low = mid + 1;
+            }
+        }
+    }
+    return NULL;
 }
 
 // Description: Get record for a IPv4 from database
@@ -390,6 +581,11 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 		record->region = NOT_SUPPORTED;
 		record->city = NOT_SUPPORTED;
 		record->isp = NOT_SUPPORTED;
+		record->domain = NOT_SUPPORTED;
+		record->usage_type = NOT_SUPPORTED;
+		record->asn = NOT_SUPPORTED;
+		record->as = NOT_SUPPORTED;
+		record->last_seen = NOT_SUPPORTED;
 
 		while(fgets(line, 2048, handle) != NULL){
 			str_replace(line, "\n", "");
@@ -418,6 +614,11 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 			record->isp = "-";
 			record->is_proxy = "0";
 			record->proxy_type = "-";
+			record->domain = "-";
+			record->usage_type = "-";
+			record->asn = "-";
+			record->as = "-";
+			record->last_seen = "-";
 
 			return record;
 		}
@@ -570,19 +771,25 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 	return NULL;
 }
 
+
+
 // Description: Get the location data
 static IP2ProxyRecord *IP2Proxy_get_record(IP2Proxy *loc, char *ipstring, uint32_t mode)
 {
 	ipv_t parsed_ipv = IP2Proxy_parse_addr(ipstring);
-
 	if (parsed_ipv.ipversion == 4)
 	{
 		//process IPv4
 		return IP2Proxy_get_ipv4_record(loc, ipstring, mode, parsed_ipv);
 	}
+    if (parsed_ipv.ipversion == 6)
+    {
+		//process IPv6
+        return IP2Proxy_get_ipv6_record(loc, ipstring, mode, parsed_ipv);
+    }
 	else
-	{
-		return IP2Proxy_bad_record(INVALID_IPV4_ADDRESS);
+    {
+        return IP2Proxy_bad_record(INVALID_IPV4_ADDRESS);
 	}
 }
 
@@ -627,6 +834,13 @@ static int IP2Proxy_ip_is_ipv4 (char* ipaddr)
 {
 	struct sockaddr_in sa;
 	return inet_pton(AF_INET, ipaddr, &(sa.sin_addr));
+}
+
+// Description: Check if this was an IPv6 address
+static int IP2Proxy_ip_is_ipv6 (char* ipaddr)
+{
+    struct in6_addr_local ipv6;
+    return  inet_pton(AF_INET6, ipaddr, &ipv6);
 }
 
 // Description: Return API version as string

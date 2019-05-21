@@ -17,7 +17,7 @@ int main (){
 	/*
 	Lookup by BIN database (Faster)
 	*/
-	IP2Proxy *IP2ProxyObj = IP2Proxy_open("../data/SAMPLE.BIN");
+	IP2Proxy *IP2ProxyObj = IP2Proxy_open("../data/IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN.BIN");
 
 	if (IP2ProxyObj == NULL){
 		printf("Please install the database in correct path.\n");
@@ -47,6 +47,11 @@ int main (){
 	fprintf(stdout, "ISP: %s\n", record->isp);
 	fprintf(stdout, "Is Proxy: %s\n", record->is_proxy);
 	fprintf(stdout, "Proxy Type: %s\n", record->proxy_type);
+	fprintf(stdout, "Domain: %s\n", record->domain);
+	fprintf(stdout, "Usage Type: %s\n", record->usage_type);
+	fprintf(stdout, "ASN: %s\n", record->asn);
+	fprintf(stdout, "AS: %s\n", record->as);
+	fprintf(stdout, "Last Seen: %s\n", record->last_seen);
 
 	IP2Proxy_close(IP2ProxyObj);
 	IP2Proxy_free_record(record);
