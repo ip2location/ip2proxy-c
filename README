@@ -40,23 +40,28 @@ For more details, please visit:
 
 Below are the methods supported in this library.
 
-| Method Name                   | Description                              |
-| ----------------------------- | ---------------------------------------- |
+| Method Name                   | Description                                                  |
+| ----------------------------- | ------------------------------------------------------------ |
 | IP2Proxy_open                 | Open the IP2Proxy BIN data with **File I/O** mode for lookup. |
-| IP2Proxy_open_csv             | Open the IP2Proxy CSV file for lookup. Slower performance. |
+| IP2Proxy_open_csv             | Open the IP2Proxy CSV file for lookup. Slower performance.   |
 | IP2Proxy_open_mem             | Open the IP2Proxy BIN data with **Shared Memory** or **Memory Cache** mode to speed up lookup. |
-| IP2Proxy_close                | Close and clean up the file pointer.     |
-| IP2Proxy_get_package_version  | Get the package version (1 to 4 for PX1 to PX4 respectively). |
-| IP2Proxy_get_module_version   | Get the module version.                  |
-| IP2Proxy_get_database_version | Get the database version.                |
+| IP2Proxy_close                | Close and clean up the file pointer.                         |
+| IP2Proxy_get_package_version  | Get the package version (1 to 4 for PX1 to PX8 respectively). |
+| IP2Proxy_get_module_version   | Get the module version.                                      |
+| IP2Proxy_get_database_version | Get the database version.                                    |
 | IP2Proxy_is_proxy             | Check wether if an IP address was a proxy. Returned value:<ul><li>-1 : errors</li><li>0 : not a proxy</li><li>1 : a proxy</li><li>2 : a data center IP address</li></ul> |
-| IP2Proxy_get_all              | Return the proxy information in array.   |
+| IP2Proxy_get_all              | Return the proxy information in array.                       |
 | IP2Proxy_get_proxy_type       | Return the proxy type. Please visit <a href="https://www.ip2location.com/databases/px4-ip-proxytype-country-region-city-isp" target="_blank">IP2Location</a> for the list of proxy types supported |
-| IP2Proxy_get_country_short    | Return the ISO3166-1 country code (2-digits) of the proxy. |
-| IP2Proxy_get_country_long     | Return the ISO3166-1 country name of the proxy. |
+| IP2Proxy_get_country_short    | Return the ISO3166-1 country code (2-digits) of the proxy.   |
+| IP2Proxy_get_country_long     | Return the ISO3166-1 country name of the proxy.              |
 | IP2Proxy_get_region           | Return the ISO3166-2 region name of the proxy. Please visit <a href="https://www.ip2location.com/free/iso3166-2" target="_blank">ISO3166-2 Subdivision Code</a> for the information of ISO3166-2 supported |
-| IP2Proxy_get_city             | Return the city name of the proxy.       |
-| IP2Proxy_get_isp              | Return the ISP name of the proxy.        |
+| IP2Proxy_get_city             | Return the city name of the proxy.                           |
+| IP2Proxy_get_isp              | Return the ISP name of the proxy.                            |
+| IP2Proxy_get_domain           | Return internet domain name associated with IP address range. |
+| IP2Proxy_get_usage_type       | Return usage type classification of ISP or company.          |
+| IP2Proxy_get_asn              | Return autonomous system number (ASN).                       |
+| IP2Proxy_get_as               | Return autonomous system (AS) name.                          |
+| IP2Proxy_get_last_seen        | Return proxy last seen in days.                              |
 
 
 
