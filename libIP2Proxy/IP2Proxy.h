@@ -133,7 +133,7 @@ typedef struct
 	char *domain;
 	char *usage_type;
 	char *asn;
-	char *as;
+	char *as_;
 	char *last_seen;
 } IP2ProxyRecord;
 

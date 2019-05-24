@@ -50,7 +50,7 @@ int main (){
 	fprintf(stdout, "Domain: %s\n", record->domain);
 	fprintf(stdout, "Usage Type: %s\n", record->usage_type);
 	fprintf(stdout, "ASN: %s\n", record->asn);
-	fprintf(stdout, "AS: %s\n", record->as);
+	fprintf(stdout, "AS: %s\n", record->as_);
 	fprintf(stdout, "Last Seen: %s\n", record->last_seen);
 
 	IP2Proxy_close(IP2ProxyObj);

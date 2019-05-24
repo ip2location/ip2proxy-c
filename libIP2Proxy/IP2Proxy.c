@@ -356,7 +356,7 @@ static IP2ProxyRecord *IP2Proxy_bad_record(const char *message)
 	record->domain = strdup(message);
 	record->usage_type = strdup(message);
 	record->asn = strdup(message);
-	record->as = strdup(message);
+	record->as_ = strdup(message);
 	record->last_seen = strdup(message);
 
 	return record;
@@ -476,11 +476,11 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *loc, uint32_t rowaddr, uin
 
 	if ((mode & AS) && (IP2PROXY_AS_POSITION[dbtype] != 0))
 	{
-		record->as = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_AS_POSITION[dbtype]-1)));
+		record->as_ = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_AS_POSITION[dbtype]-1)));
 	}
 	else
 	{
-		record->as = strdup(NOT_SUPPORTED);
+		record->as_ = strdup(NOT_SUPPORTED);
 	}
 
 	if ((mode & LASTSEEN) && (IP2PROXY_LAST_SEEN_POSITION[dbtype] != 0))
@@ -584,7 +584,7 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 		record->domain = NOT_SUPPORTED;
 		record->usage_type = NOT_SUPPORTED;
 		record->asn = NOT_SUPPORTED;
-		record->as = NOT_SUPPORTED;
+		record->as_ = NOT_SUPPORTED;
 		record->last_seen = NOT_SUPPORTED;
 
 		while(fgets(line, 2048, handle) != NULL){
@@ -617,7 +617,7 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 			record->domain = "-";
 			record->usage_type = "-";
 			record->asn = "-";
-			record->as = "-";
+			record->as_ = "-";
 			record->last_seen = "-";
 
 			return record;
