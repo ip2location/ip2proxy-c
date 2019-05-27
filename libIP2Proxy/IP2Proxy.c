@@ -380,7 +380,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *loc, uint32_t rowaddr, uin
 		else{
 			record->proxy_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_PROXY_TYPE_POSITION[dbtype]-1)));
 
-			if (strcmp(record->proxy_type, "DCH") == 0) {
+			if (strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0) {
 				record->is_proxy = "2";
 			}
 			else{
@@ -653,7 +653,7 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 				if(strcmp(record->country_short, "-") == 0){
 					record->is_proxy = "0";
 				}
-				else if(strcmp(record->proxy_type, "DCH") == 0){
+				else if(strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0){
 					record->is_proxy = "0";
 				}
 				else{
@@ -682,7 +682,7 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 				if(strcmp(record->country_short, "-") == 0){
 					record->is_proxy = "0";
 				}
-				else if(strcmp(record->proxy_type, "DCH") == 0){
+				else if(strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0){
 					record->is_proxy = "0";
 				}
 				else{
@@ -713,7 +713,7 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 				if(strcmp(record->country_short, "-") == 0){
 					record->is_proxy = "0";
 				}
-				else if(strcmp(record->proxy_type, "DCH") == 0){
+				else if(strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0){
 					record->is_proxy = "0";
 				}
 				else{
