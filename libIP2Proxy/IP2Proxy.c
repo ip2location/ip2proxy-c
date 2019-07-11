@@ -241,18 +241,34 @@ static ipv_t IP2Proxy_parse_addr(const char *addr)
     {
         // Parse the v6 address
         inet_pton(AF_INET6, addr, &parsed.ipv6);
+
+		// IPv4 Address in IPv6
         if (parsed.ipv6.u.addr8[0] == 0 && parsed.ipv6.u.addr8[1] == 0 && parsed.ipv6.u.addr8[2] == 0 &&
                 parsed.ipv6.u.addr8[3] == 0 && parsed.ipv6.u.addr8[4] == 0 && parsed.ipv6.u.addr8[5] == 0 &&
                 parsed.ipv6.u.addr8[6] == 0 && parsed.ipv6.u.addr8[7] == 0 && parsed.ipv6.u.addr8[8] == 0 &&
                 parsed.ipv6.u.addr8[9] == 0 && parsed.ipv6.u.addr8[10] == 255 && parsed.ipv6.u.addr8[11] == 255)
         {
-            // IPv4 address in IPv6 format (::ffff:0.0.0.0 or ::ffff:00:00)
             parsed.ipversion = 4;
             parsed.ipv4 = (parsed.ipv6.u.addr8[12] << 24) + (parsed.ipv6.u.addr8[13] << 16) + (parsed.ipv6.u.addr8[14] << 8) + parsed.ipv6.u.addr8[15];
         }
+
+		// 6to4 Address - 2002::/16
+		else if (parsed.ipv6.u.addr8[0] == 32 && parsed.ipv6.u.addr8[1] == 2)
+		{
+			parsed.ipversion = 4;
+            parsed.ipv4 = (parsed.ipv6.u.addr8[12] << 24) + (parsed.ipv6.u.addr8[13] << 16) + (parsed.ipv6.u.addr8[14] << 8) + parsed.ipv6.u.addr8[15];
+		}
+
+		// Teredo Address - 2001:0::/32
+		else if (parsed.ipv6.u.addr8[0] == 32 && parsed.ipv6.u.addr8[1] == 1 && parsed.ipv6.u.addr8[2] == 0 && parsed.ipv6.u.addr8[3] == 0)
+		{
+			parsed.ipversion = 4;
+			parsed.ipv4 = ~((parsed.ipv6.u.addr8[12] << 24) + (parsed.ipv6.u.addr8[13] << 16) + (parsed.ipv6.u.addr8[14] << 8) + parsed.ipv6.u.addr8[15]);
+		}
+
+		// Common IPv6 Address
         else
         {
-            // pure IPv6 format
             parsed.ipversion = 6;
         }
     }
