@@ -819,10 +819,31 @@ static IP2ProxyRecord *IP2Proxy_new_record()
 // Description: Free the record object
 void IP2Proxy_free_record(IP2ProxyRecord *record)
 {
+	if(record->country_short != NULL)
+		free(record->country_short);
+	if(record->country_long != NULL)
+		free(record->country_long);
+	if(record->region != NULL)
+		free(record->region);
+	if(record->city != NULL)
+		free(record->city);
+	if(record->isp != NULL)
+		free(record->isp);
+	if(record->proxy_type != NULL)
+		free(record->proxy_type);
+	if(record->domain != NULL)
+		free(record->domain);
+	if(record->usage_type != NULL)
+		free(record->usage_type);
+	if(record->asn != NULL)
+		free(record->asn);
+	if(record->as_ != NULL)
+		free(record->as_);
+	if(record->last_seen != NULL)
+		free(record->last_seen);
+
 	if (record == NULL)
-	{
 		return;
-	}
 
 	free(record);
 }
