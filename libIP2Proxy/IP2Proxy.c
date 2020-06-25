@@ -378,6 +378,7 @@ static IP2ProxyRecord *IP2Proxy_bad_record(const char *message)
 	return record;
 }
 
+
 // Description: read the record data
 static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *loc, uint32_t rowaddr, uint32_t mode)
 {
@@ -388,13 +389,15 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *loc, uint32_t rowaddr, uin
 
 	if ((mode & ISPROXY) && (IP2PROXY_COUNTRY_POSITION[dbtype] != 0))
 	{
-		record->country_short = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_COUNTRY_POSITION[dbtype]-1)));
+		if(!record->country_short)
+			record->country_short = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_COUNTRY_POSITION[dbtype]-1)));
 
 		if (strcmp(record->country_short, "-") == 0) {
 			record->is_proxy = "0";
 		}
 		else{
-			record->proxy_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_PROXY_TYPE_POSITION[dbtype]-1)));
+			if(!record->proxy_type)
+				record->proxy_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_PROXY_TYPE_POSITION[dbtype]-1)));
 
 			if (strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0) {
 				record->is_proxy = "2";
@@ -411,101 +414,123 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *loc, uint32_t rowaddr, uin
 
 	if ((mode & COUNTRYSHORT) && (IP2PROXY_COUNTRY_POSITION[dbtype] != 0))
 	{
-		record->country_short = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_COUNTRY_POSITION[dbtype]-1)));
+		if(!record->country_short)
+			record->country_short = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_COUNTRY_POSITION[dbtype]-1)));
 	}
 	else
 	{
-		record->country_short = strdup(NOT_SUPPORTED);
+		if(!record->country_short)
+			record->country_short = strdup(NOT_SUPPORTED);
 	}
 
 	if ((mode & COUNTRYLONG) && (IP2PROXY_COUNTRY_POSITION[dbtype] != 0))
 	{
-		record->country_long = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_COUNTRY_POSITION[dbtype]-1))+3);
+		if(!record->country_long)
+			record->country_long = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_COUNTRY_POSITION[dbtype]-1))+3);
 	}
 	else
 	{
-		record->country_long = strdup(NOT_SUPPORTED);
+		if(!record->country_long)
+			record->country_long = strdup(NOT_SUPPORTED);
 	}
 
 	if ((mode & REGION) && (IP2PROXY_REGION_POSITION[dbtype] != 0))
 	{
-		record->region = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_REGION_POSITION[dbtype]-1)));
+		if(!record->region)
+			record->region = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_REGION_POSITION[dbtype]-1)));
 	}
 	else
 	{
-		record->region = strdup(NOT_SUPPORTED);
+		if(!record->region)
+			record->region = strdup(NOT_SUPPORTED);
 	}
 
 	if ((mode & CITY) && (IP2PROXY_CITY_POSITION[dbtype] != 0))
 	{
-		record->city = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_CITY_POSITION[dbtype]-1)));
+		if(!record->city)
+			record->city = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_CITY_POSITION[dbtype]-1)));
 	}
 	else
 	{
-		record->city = strdup(NOT_SUPPORTED);
+		if(!record->city)
+			record->city = strdup(NOT_SUPPORTED);
 	}
 
 	if ((mode & ISP) && (IP2PROXY_ISP_POSITION[dbtype] != 0))
 	{
-		record->isp = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_ISP_POSITION[dbtype]-1)));
+		if(!record->isp)
+			record->isp = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_ISP_POSITION[dbtype]-1)));
 	}
 	else
 	{
-		record->isp = strdup(NOT_SUPPORTED);
+		if(!record->isp)
+			record->isp = strdup(NOT_SUPPORTED);
 	}
 
 	if ((mode & PROXYTYPE) && (IP2PROXY_PROXY_TYPE_POSITION[dbtype] != 0))
 	{
-		record->proxy_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_PROXY_TYPE_POSITION[dbtype]-1)));
+		if(!record->proxy_type)
+			record->proxy_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_PROXY_TYPE_POSITION[dbtype]-1)));
 	}
 	else
 	{
-		record->proxy_type = strdup(NOT_SUPPORTED);
+		if(!record->proxy_type)
+			record->proxy_type = strdup(NOT_SUPPORTED);
 	}
 
 	if ((mode & DOMAIN_) && (IP2PROXY_DOMAIN_POSITION[dbtype] != 0))
 	{
-		record->domain = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_DOMAIN_POSITION[dbtype]-1)));
+		if(!record->domain)
+			record->domain = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_DOMAIN_POSITION[dbtype]-1)));
 	}
 	else
 	{
-		record->domain = strdup(NOT_SUPPORTED);
+		if(!record->domain)
+			record->domain = strdup(NOT_SUPPORTED);
 	}
 
 	if ((mode & USAGETYPE) && (IP2PROXY_USAGE_TYPE_POSITION[dbtype] != 0))
 	{
-		record->usage_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_USAGE_TYPE_POSITION[dbtype]-1)));
+		if(!record->usage_type)
+			record->usage_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_USAGE_TYPE_POSITION[dbtype]-1)));
 	}
 	else
 	{
-		record->usage_type = strdup(NOT_SUPPORTED);
+		if(!record->usage_type)
+			record->usage_type = strdup(NOT_SUPPORTED);
 	}
 
 	if ((mode & ASN) && (IP2PROXY_ASN_POSITION[dbtype] != 0))
 	{
-		record->asn = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_ASN_POSITION[dbtype]-1)));
+		if(!record->asn)
+			record->asn = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_ASN_POSITION[dbtype]-1)));
 	}
 	else
 	{
-		record->asn = strdup(NOT_SUPPORTED);
+		if(!record->asn)
+			record->asn = strdup(NOT_SUPPORTED);
 	}
 
 	if ((mode & AS) && (IP2PROXY_AS_POSITION[dbtype] != 0))
 	{
-		record->as_ = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_AS_POSITION[dbtype]-1)));
+		if(!record->as_)
+			record->as_ = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_AS_POSITION[dbtype]-1)));
 	}
 	else
 	{
-		record->as_ = strdup(NOT_SUPPORTED);
+		if(!record->as_)
+			record->as_ = strdup(NOT_SUPPORTED);
 	}
 
 	if ((mode & LASTSEEN) && (IP2PROXY_LAST_SEEN_POSITION[dbtype] != 0))
 	{
-		record->last_seen = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_LAST_SEEN_POSITION[dbtype]-1)));
+		if(!record->last_seen)
+			record->last_seen = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_LAST_SEEN_POSITION[dbtype]-1)));
 	}
 	else
 	{
-		record->last_seen = strdup(NOT_SUPPORTED);
+		if(!record->last_seen)
+			record->last_seen = strdup(NOT_SUPPORTED);
 	}
 
 	return record;
@@ -819,6 +844,10 @@ static IP2ProxyRecord *IP2Proxy_new_record()
 // Description: Free the record object
 void IP2Proxy_free_record(IP2ProxyRecord *record)
 {
+
+	if (record == NULL)
+		return;
+
 	if(record->country_short != NULL)
 		free(record->country_short);
 	if(record->country_long != NULL)
@@ -841,9 +870,6 @@ void IP2Proxy_free_record(IP2ProxyRecord *record)
 		free(record->as_);
 	if(record->last_seen != NULL)
 		free(record->last_seen);
-
-	if (record == NULL)
-		return;
 
 	free(record);
 }
