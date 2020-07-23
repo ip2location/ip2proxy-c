@@ -1,6 +1,6 @@
 /*
  * IP2Proxy C library is distributed under LGPL version 3
- * Copyright (c) 2013-2019 IP2Proxy.com. support at ip2location dot com
+ * Copyright (c) 2013-2020 IP2Proxy.com. support at ip2location dot com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,7 +65,7 @@ extern "C" {
 
 #include "IP2Proxy_DB.h"
 
-#define API_VERSION	2.1.0
+#define API_VERSION	3.0.0
 
 #define API_VERSION_MAJOR	2
 #define API_VERSION_MINOR	1
@@ -89,16 +89,16 @@ extern "C" {
 #define ASN				0x00200
 #define AS				0x00400
 #define LASTSEEN		0x00800
+#define THREAT			0x01000
 
-#define ALL	COUNTRYSHORT | COUNTRYLONG | REGION | CITY | ISP | ISPROXY | PROXYTYPE | DOMAIN_ | USAGETYPE | ASN | AS | LASTSEEN
+#define ALL	COUNTRYSHORT | COUNTRYLONG | REGION | CITY | ISP | ISPROXY | PROXYTYPE | DOMAIN_ | USAGETYPE | ASN | AS | LASTSEEN | THREAT
 
 #define DEFAULT			0x0001
 #define NO_EMPTY_STRING	0x0002
 #define NO_LEADING		0x0004
 #define NO_TRAILING		0x0008
 
-#define INVALID_IPV4_ADDRESS "INVALID IPV4 ADDRESS"
-#define INVALID_IPV6_ADDRESS "INVALID IPV6 ADDRESS"
+#define INVALID_IP_ADDRESS "INVALID IP ADDRESS"
 #define NOT_SUPPORTED "NOT SUPPORTED"
 
 typedef struct
@@ -110,9 +110,6 @@ typedef struct
 	uint8_t databaseday;
 	uint8_t databasemonth;
 	uint8_t databaseyear;
-	uint32_t databasecount;
-	uint32_t databaseaddr;
-	uint32_t ipversion;
 	uint32_t ipv4databasecount;
 	uint32_t ipv4databaseaddr;
 	uint32_t ipv4indexbaseaddr;
@@ -135,6 +132,7 @@ typedef struct
 	char *asn;
 	char *as_;
 	char *last_seen;
+	char *threat;
 } IP2ProxyRecord;
 
 /*##################
@@ -156,6 +154,7 @@ IP2ProxyRecord *IP2Proxy_get_usage_type(IP2Proxy *loc, char *ip);
 IP2ProxyRecord *IP2Proxy_get_asn(IP2Proxy *loc, char *ip);
 IP2ProxyRecord *IP2Proxy_get_as(IP2Proxy *loc, char *ip);
 IP2ProxyRecord *IP2Proxy_get_last_seen(IP2Proxy *loc, char *ip);
+IP2ProxyRecord *IP2Proxy_get_threat(IP2Proxy *loc, char *ip);
 IP2ProxyRecord *IP2Proxy_get_all(IP2Proxy *loc, char *ip);
 void IP2Proxy_free_record(IP2ProxyRecord *record);
 void IP2Proxy_delete_shm();
@@ -168,3 +167,4 @@ char *IP2Proxy_get_database_version(IP2Proxy *loc);
 #endif
 
 #endif
+

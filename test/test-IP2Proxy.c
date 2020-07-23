@@ -17,7 +17,7 @@ int main (){
 	/*
 	Lookup by BIN database (Faster)
 	*/
-	IP2Proxy *IP2ProxyObj = IP2Proxy_open("../data/IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN.BIN");
+	IP2Proxy *IP2ProxyObj = IP2Proxy_open("../data/IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL.BIN");
 
 	if (IP2ProxyObj == NULL){
 		printf("Please install the database in correct path.\n");
@@ -52,6 +52,7 @@ int main (){
 	fprintf(stdout, "ASN: %s\n", record->asn);
 	fprintf(stdout, "AS: %s\n", record->as_);
 	fprintf(stdout, "Last Seen: %s\n", record->last_seen);
+	fprintf(stdout, "Threat: %s\n", record->threat);
 
 	IP2Proxy_close(IP2ProxyObj);
 	IP2Proxy_free_record(record);

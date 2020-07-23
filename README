@@ -62,6 +62,7 @@ Below are the methods supported in this library.
 | IP2Proxy_get_asn              | Return autonomous system number (ASN).                       |
 | IP2Proxy_get_as               | Return autonomous system (AS) name.                          |
 | IP2Proxy_get_last_seen        | Return proxy last seen in days.                              |
+| IP2Proxy_get_threat           | Return security threat reported.                             |
 
 
 
