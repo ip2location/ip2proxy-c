@@ -1,0 +1,15 @@
+Source: libip2proxy
+Section: utils
+Priority: optional
+Maintainer: IP2Location <support@ip2location.com>
+Build-Depends: debhelper (>= 11)
+Standards-Version: 4.5.0
+Homepage: https://www.ip2location.com
+Vcs-Browser: https://github.com/ip2location/ip2proxy-c
+Vcs-Git: https://github.com/ip2location/ip2proxy-c.git
+
+Package: libip2proxy
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: IP to proxy lookup library from IP2Proxy.
+  IP2Proxy library detects proxy servers with country, region, city, ISP, proxy type and securty threat information using IP2Proxy binary database.
