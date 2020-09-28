@@ -1,6 +1,6 @@
 AC_PREREQ(2.59)
 
-AC_INIT([IP2Proxy], [1.0.2])
+AC_INIT([IP2Proxy], [3.1.0])
 AC_CONFIG_SRCDIR([libIP2Proxy/IP2Proxy.c])
 AM_INIT_AUTOMAKE
 

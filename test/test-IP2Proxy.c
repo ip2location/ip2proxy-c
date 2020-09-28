@@ -1,7 +1,8 @@
 #include <IP2Proxy.h>
 #include <string.h>
 
-int main (){
+int main ()
+{
 	IP2ProxyRecord *record = NULL;
 
 	/*
@@ -17,9 +18,9 @@ int main (){
 	/*
 	Lookup by BIN database (Faster)
 	*/
-	IP2Proxy *IP2ProxyObj = IP2Proxy_open("../data/IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP-DOMAIN-USAGETYPE-ASN-LASTSEEN-THREAT-RESIDENTIAL.BIN");
+	IP2Proxy *IP2ProxyObj = IP2Proxy_open("../data/SAMPLE.BIN");
 
-	if (IP2ProxyObj == NULL){
+	if (IP2ProxyObj == NULL) {
 		printf("Please install the database in correct path.\n");
 		return -1;
 	}
@@ -28,17 +29,16 @@ int main (){
 	Lookup by BIN database in memory (Fastest)
 	WARNING: Please make sure your machine have enough memory to use this method.
 	*/
-	/*if(IP2Proxy_open_mem(IP2ProxyObj, IP2PROXY_SHARED_MEMORY) == -1)
+	/*if(IP2Proxy_set_lookup_mode(IP2ProxyObj, IP2PROXY_SHARED_MEMORY) == -1)
 	{
-		fprintf(stderr, "IPv4: Call to IP2Proxy_open_mem failed\n");
+		fprintf(stderr, "Call to IP2Proxy_set_lookup_mode failed\n");
 		return -1;
 	}
 	*/
 
-	record = IP2Proxy_get_all(IP2ProxyObj, "1.0.132.72");
+	record = IP2Proxy_get_all(IP2ProxyObj, "8.8.8.8");
 
-	fprintf(stdout, "Module Version: %s\n", IP2Proxy_get_module_version());
-	fprintf(stdout, "Package Version: %s\n", IP2Proxy_get_package_version(IP2ProxyObj));
+	fprintf(stdout, "Module Version: %s\n", IP2Proxy_version_string());
 	fprintf(stdout, "Database Version: %s\n\n", IP2Proxy_get_database_version(IP2ProxyObj));
 	fprintf(stdout, "Country Code: %s\n", record->country_short);
 	fprintf(stdout, "Country Name: %s\n", record->country_long);
@@ -56,7 +56,7 @@ int main (){
 
 	IP2Proxy_close(IP2ProxyObj);
 	IP2Proxy_free_record(record);
-	IP2Proxy_delete_shm();
+	IP2Proxy_clear_memory();
 
 	return 1;
 }

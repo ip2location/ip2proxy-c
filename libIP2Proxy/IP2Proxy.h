@@ -1,20 +1,11 @@
 /*
- * IP2Proxy C library is distributed under LGPL version 3
- * Copyright (c) 2013-2020 IP2Proxy.com. support at ip2location dot com
+ * IP2Proxy C library is distributed under MIT license
+ * Copyright (c) 2013-2020 IP2Location.com. support at ip2location dot com
  *
  * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 3 of the License, or any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not see <http://www.gnu.org/licenses/>.
+ * modify it under the terms of the MIT license
  */
+
 #ifndef HAVE_IP2PROXY_H
 #define HAVE_IP2PROXY_H
 
@@ -63,11 +54,8 @@ extern "C" {
 #endif
 #endif
 
-#include "IP2Proxy_DB.h"
-
-#define API_VERSION	3.0.0
-
-#define API_VERSION_MAJOR	2
+#define API_VERSION			3.1.0
+#define API_VERSION_MAJOR	3
 #define API_VERSION_MINOR	1
 #define API_VERSION_RELEASE	0
 #define API_VERSION_NUMERIC (((API_VERSION_MAJOR * 100) + API_VERSION_MINOR) * 100 + API_VERSION_RELEASE)
@@ -84,42 +72,44 @@ extern "C" {
 #define ISP				0x00010
 #define ISPROXY			0x00020
 #define PROXYTYPE		0x00040
-#define DOMAIN_			0x00080
+#define DOMAINNAME		0x00080
 #define USAGETYPE		0x00100
 #define ASN				0x00200
 #define AS				0x00400
 #define LASTSEEN		0x00800
 #define THREAT			0x01000
 
-#define ALL	COUNTRYSHORT | COUNTRYLONG | REGION | CITY | ISP | ISPROXY | PROXYTYPE | DOMAIN_ | USAGETYPE | ASN | AS | LASTSEEN | THREAT
+#define ALL	COUNTRYSHORT | COUNTRYLONG | REGION | CITY | ISP | ISPROXY | PROXYTYPE | DOMAINNAME | USAGETYPE | ASN | AS | LASTSEEN | THREAT
 
-#define DEFAULT			0x0001
-#define NO_EMPTY_STRING	0x0002
-#define NO_LEADING		0x0004
-#define NO_TRAILING		0x0008
+#define INVALID_IP_ADDRESS					"INVALID IP ADDRESS"
+#define IPV6_ADDRESS_MISSING_IN_IPV4_BIN	"IPV6 ADDRESS MISSING IN IPV4 BIN"
+#define NOT_SUPPORTED						"NOT SUPPORTED"
+#define IP2PROXY_SHM						"/IP2Proxy_Shm"
+#define MAP_ADDR							4194500608
 
-#define INVALID_IP_ADDRESS "INVALID IP ADDRESS"
-#define NOT_SUPPORTED "NOT SUPPORTED"
+enum IP2Proxy_lookup_mode {
+	IP2PROXY_FILE_IO,
+	IP2PROXY_CACHE_MEMORY,
+	IP2PROXY_SHARED_MEMORY
+};
 
-typedef struct
-{
-	FILE *filehandle;
+typedef struct {
+	FILE *file;
 	uint8_t is_csv;
-	uint8_t databasetype;
-	uint8_t databasecolumn;
-	uint8_t databaseday;
-	uint8_t databasemonth;
-	uint8_t databaseyear;
-	uint32_t ipv4databasecount;
-	uint32_t ipv4databaseaddr;
-	uint32_t ipv4indexbaseaddr;
-	uint32_t ipv6databasecount;
-	uint32_t ipv6databaseaddr;
-	uint32_t ipv6indexbaseaddr;
+	uint8_t database_type;
+	uint8_t database_column;
+	uint8_t database_day;
+	uint8_t database_month;
+	uint8_t database_year;
+	uint32_t ipv4_database_count;
+	uint32_t ipv4_database_address;
+	uint32_t ipv4_index_base_address;
+	uint32_t ipv6_database_count;
+	uint32_t ipv6_database_address;
+	uint32_t ipv6_index_base_address;
 } IP2Proxy;
 
-typedef struct
-{
+typedef struct {
 	char *country_short;
 	char *country_long;
 	char *region;
@@ -135,36 +125,53 @@ typedef struct
 	char *threat;
 } IP2ProxyRecord;
 
-/*##################
-# Public Functions
-##################*/
+/* Public functions */
+unsigned long int IP2Proxy_version_number(void);
+char *IP2Proxy_version_string(void);
+char *IP2Proxy_get_database_version(IP2Proxy *handler);
+
+char *IP2Proxy_get_module_version(void);
+char *IP2Proxy_get_package_version(IP2Proxy *handler);
+
+int IP2Proxy_open_mem(IP2Proxy *handler, enum IP2Proxy_lookup_mode);
+int IP2Proxy_set_lookup_mode(IP2Proxy *handler, enum IP2Proxy_lookup_mode);
+
 IP2Proxy *IP2Proxy_open(char *db);
 IP2Proxy *IP2Proxy_open_csv(char *csv);
-int IP2Proxy_open_mem(IP2Proxy *loc, enum IP2Proxy_mem_type);
-uint32_t IP2Proxy_close(IP2Proxy *loc);
-IP2ProxyRecord *IP2Proxy_get_country_short(IP2Proxy *loc, char *ip);
-IP2ProxyRecord *IP2Proxy_get_country_long(IP2Proxy *loc, char *ip);
-IP2ProxyRecord *IP2Proxy_get_region(IP2Proxy *loc, char *ip);
-IP2ProxyRecord *IP2Proxy_get_city (IP2Proxy *loc, char *ip);
-IP2ProxyRecord *IP2Proxy_get_isp(IP2Proxy *loc, char *ip);
-IP2ProxyRecord *IP2Proxy_is_proxy(IP2Proxy *loc, char *ip);
-IP2ProxyRecord *IP2Proxy_get_proxy_type(IP2Proxy *loc, char *ip);
-IP2ProxyRecord *IP2Proxy_get_domain(IP2Proxy *loc, char *ip);
-IP2ProxyRecord *IP2Proxy_get_usage_type(IP2Proxy *loc, char *ip);
-IP2ProxyRecord *IP2Proxy_get_asn(IP2Proxy *loc, char *ip);
-IP2ProxyRecord *IP2Proxy_get_as(IP2Proxy *loc, char *ip);
-IP2ProxyRecord *IP2Proxy_get_last_seen(IP2Proxy *loc, char *ip);
-IP2ProxyRecord *IP2Proxy_get_threat(IP2Proxy *loc, char *ip);
-IP2ProxyRecord *IP2Proxy_get_all(IP2Proxy *loc, char *ip);
+
+IP2ProxyRecord *IP2Proxy_get_all(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_as(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_asn(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_city (IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_country_long(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_country_short(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_domain(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_isp(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_last_seen(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_proxy_type(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_region(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_threat(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_usage_type(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_is_proxy(IP2Proxy *handler, char *ip);
+
+uint32_t IP2Proxy_close(IP2Proxy *handler);
+void IP2Proxy_clear_memory();
 void IP2Proxy_free_record(IP2ProxyRecord *record);
+
+/* Private functions */
+char *IP2Proxy_read_string(FILE *handle, uint32_t position);
+float IP2Proxy_read_float(FILE *handle, uint32_t position);
+int32_t IP2Proxy_set_memory_cache(FILE *filehandle);
+int32_t IP2Proxy_set_shared_memory(FILE *filehandle);
+struct in6_addr IP2Proxy_read_ipv6_address(FILE *handle, uint32_t position);
+uint32_t IP2Proxy_read32(FILE *handle, uint32_t position);
+uint8_t IP2Proxy_read8(FILE *handle, uint32_t position);
+int32_t IP2Proxy_close_memory(FILE *file);
 void IP2Proxy_delete_shm();
-char *IP2Proxy_get_module_version(void);
-char *IP2Proxy_get_package_version(IP2Proxy *loc);
-char *IP2Proxy_get_database_version(IP2Proxy *loc);
+void IP2Proxy_delete_shared_memory();
+void IP2Proxy_replace(char *target, const char *needle, const char *replacement);
 
 #ifdef __cplusplus
 }
 #endif
-
 #endif
-

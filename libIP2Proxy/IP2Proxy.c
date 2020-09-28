@@ -1,88 +1,105 @@
 /*
- * IP2Proxy C library is distributed under LGPL version 3
- * Copyright (c) 2013-2020 IP2Proxy.com. support at ip2location dot com
+ * IP2Proxy C library is distributed under MIT license
+ * Copyright (c) 2013-2020 IP2Location.com. support at ip2location dot com
  *
  * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 3 of the License, or any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not see <http://www.gnu.org/licenses/>.
- *
+ * modify it under the terms of the MIT license
  */
 
 #ifdef WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
+	#include <winsock2.h>
+	#include <ws2tcpip.h>
 #else
-#include <stdint.h>
-#include <strings.h>
-#include <sys/socket.h>
-#include <time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+	#include <stdint.h>
+	#include <strings.h>
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <unistd.h>
+	#include <sys/mman.h>
 #endif
 
 #include <string.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #include "IP2Proxy.h"
-#include "IP2Proxy_DB.h"
 
-typedef struct ipv_t {
-	uint32_t ipversion;
+#ifdef _WIN32
+	#define _STR2(x) #x
+	#define _STR(x) _STR2(x)
+	#define PACKAGE_VERSION _STR(API_VERSION)
+#else
+	#include "../config.h"
+#endif
+
+typedef struct ip_container {
+	uint32_t version;
 	uint32_t ipv4;
-	struct in6_addr_local ipv6;
-} ipv_t;
+	struct in6_addr ipv6;
+} ip_container;
 
-uint8_t IP2PROXY_COUNTRY_POSITION[11]     = {0,   2,   3,   3,   3,   3,   3,   3,   3,   3,   3};
-uint8_t IP2PROXY_REGION_POSITION[11]      = {0,   0,   0,   4,   4,   4,   4,   4,   4,   4,   4};
-uint8_t IP2PROXY_CITY_POSITION[11]        = {0,   0,   0,   5,   5,   5,   5,   5,   5,   5,   5};
-uint8_t IP2PROXY_ISP_POSITION[11]         = {0,   0,   0,   0,   6,   6,   6,   6,   6,   6,   6};
-uint8_t IP2PROXY_PROXY_TYPE_POSITION[11]  = {0,   0,   2,   2,   2,   2,   2,   2,   2,   2,   2};
-uint8_t IP2PROXY_DOMAIN_POSITION[11]      = {0,   0,   0,   0,   0,   7,   7,   7,   7,   7,   7};
-uint8_t IP2PROXY_USAGE_TYPE_POSITION[11]  = {0,   0,   0,   0,   0,   0,   8,   8,   8,   8,   8};
-uint8_t IP2PROXY_ASN_POSITION[11]         = {0,   0,   0,   0,   0,   0,   0,   9,   9,   9,   9};
-uint8_t IP2PROXY_AS_POSITION[11]          = {0,   0,   0,   0,   0,   0,   0,  10,  10,  10,  10};
-uint8_t IP2PROXY_LAST_SEEN_POSITION[11]   = {0,   0,   0,   0,   0,   0,   0,   0,  11,  11,  11};
-uint8_t IP2PROXY_THREAT_POSITION[11]      = {0,   0,   0,   0,   0,   0,   0,   0,   0,  12,  12};
+uint8_t IP2PROXY_COUNTRY_POSITION[11]		= {0,   2,   3,   3,   3,   3,   3,   3,   3,   3,   3};
+uint8_t IP2PROXY_REGION_POSITION[11]		= {0,   0,   0,   4,   4,   4,   4,   4,   4,   4,   4};
+uint8_t IP2PROXY_CITY_POSITION[11]			= {0,   0,   0,   5,   5,   5,   5,   5,   5,   5,   5};
+uint8_t IP2PROXY_ISP_POSITION[11]			= {0,   0,   0,   0,   6,   6,   6,   6,   6,   6,   6};
+uint8_t IP2PROXY_PROXY_TYPE_POSITION[11]	= {0,   0,   2,   2,   2,   2,   2,   2,   2,   2,   2};
+uint8_t IP2PROXY_DOMAIN_POSITION[11]		= {0,   0,   0,   0,   0,   7,   7,   7,   7,   7,   7};
+uint8_t IP2PROXY_USAGE_TYPE_POSITION[11]	= {0,   0,   0,   0,   0,   0,   8,   8,   8,   8,   8};
+uint8_t IP2PROXY_ASN_POSITION[11]			= {0,   0,   0,   0,   0,   0,   0,   9,   9,   9,   9};
+uint8_t IP2PROXY_AS_POSITION[11]			= {0,   0,   0,   0,   0,   0,   0,  10,  10,  10,  10};
+uint8_t IP2PROXY_LAST_SEEN_POSITION[11]		= {0,   0,   0,   0,   0,   0,   0,   0,  11,  11,  11};
+uint8_t IP2PROXY_THREAT_POSITION[11]		= {0,   0,   0,   0,   0,   0,   0,   0,   0,  12,  12};
 
-static int IP2Proxy_initialize(IP2Proxy *loc);
+// Static variables
+static int32_t is_in_memory = 0;
+static enum IP2Proxy_lookup_mode lookup_mode = IP2PROXY_FILE_IO; /* Set default lookup mode as File I/O */
+static void *memory_pointer;
+
+// Static functions
+static int IP2Proxy_initialize(IP2Proxy *handler);
+static int IP2Proxy_is_ipv4(char* ip);
+static int IP2Proxy_is_ipv6(char* ip);
+static int32_t IP2Proxy_load_database_into_memory(FILE *file, void *memory_pointer, int64_t size);
 static IP2ProxyRecord *IP2Proxy_new_record();
-static uint32_t IP2Proxy_ip2no(char* ip);
-static int IP2Proxy_ip_is_ipv4 (char* ipaddr);
-static int IP2Proxy_ip_is_ipv6 (char* ipaddr);
-static IP2ProxyRecord *IP2Proxy_get_record(IP2Proxy *loc, char *ip, uint32_t mode);
-static IP2ProxyRecord *IP2Proxy_get_ipv6_record(IP2Proxy *loc, char *ipstring, uint32_t mode, ipv_t parsed_ipv);
-void str_replace(char *target, const char *needle, const char *replacement);
-static int32_t openMemFlag = 0;
+static IP2ProxyRecord *IP2Proxy_get_record(IP2Proxy *handler, char *ip, uint32_t mode);
+static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *handler, uint32_t mode, ip_container parsed_ip);
+static IP2ProxyRecord *IP2Proxy_get_ipv6_record(IP2Proxy *handler, uint32_t mode, ip_container parsed_ip);
 
-IP2Proxy *IP2Proxy_open(char *db){
+#ifndef WIN32
+static int32_t shm_fd;
+#else
+#ifdef WIN32
+HANDLE shm_fd;
+#endif
+#endif
+
+// Open IP2Proxy BIN database file
+IP2Proxy *IP2Proxy_open(char *bin)
+{
 	FILE *f;
-	IP2Proxy *loc;
+	IP2Proxy *handler;
 
-	if((f = fopen( db, "rb")) == NULL){
-		printf("IP2Proxy library error in opening database %s.\n", db);
+	if ((f = fopen(bin, "rb")) == NULL) {
+		printf("IP2Proxy library error in opening database %s.\n", bin);
 		return NULL;
 	}
 
-	loc = (IP2Proxy *) calloc(1, sizeof(IP2Proxy));
-	loc->filehandle = f;
+	handler = (IP2Proxy *) calloc(1, sizeof(IP2Proxy));
+	handler->file = f;
 
-	IP2Proxy_initialize(loc);
-	return loc;
+	IP2Proxy_initialize(handler);
+
+	return handler;
 }
 
-IP2Proxy *IP2Proxy_open_csv(char *csv){
-	IP2Proxy *loc;
+IP2Proxy *IP2Proxy_open_csv(char *csv)
+{
+	IP2Proxy *handler;
 	FILE *fp;
 	char line[2048];
 	char *delimiter = ";";
@@ -90,279 +107,273 @@ IP2Proxy *IP2Proxy_open_csv(char *csv){
 
 	int column = 0;
 
-	if((fp = fopen(csv, "r")) == NULL){
-        printf("Error when opening CSV file.");
+	if ((fp = fopen(csv, "r")) == NULL) {
+		printf("Error when opening CSV file.");
 		return NULL;
-    }
+	}
 
-	loc = (IP2Proxy *) calloc(1, sizeof(IP2Proxy));
-	loc->filehandle = fp;
-	loc->is_csv = 1;
+	handler = (IP2Proxy *) calloc(1, sizeof(IP2Proxy));
+	handler->file = fp;
+	handler->is_csv = 1;
 
-	if(fgets(line, 512, fp) != NULL){
+	if (fgets(line, 512, fp) != NULL) {
 		rewind(fp);
-		str_replace(line, "\",\"", ";");
-		str_replace(line, "\"", "");
+		IP2Proxy_replace(line, "\",\"", ";");
+		IP2Proxy_replace(line, "\"", "");
 
 		token = strtok(line, delimiter);
 
-		while(token != NULL){
+		while (token != NULL) {
 			column++;
 			token = strtok(NULL, delimiter);
 		}
 	}
 
-	switch(column){
+	switch (column) {
 		case 4:
-			loc->databasetype = 1;
+			handler->database_type = 1;
 			break;
 
 		case 5:
-			loc->databasetype = 2;
+			handler->database_type = 2;
 			break;
 
 		case 7:
-			loc->databasetype = 3;
+			handler->database_type = 3;
 			break;
 
 		case 8:
-			loc->databasetype = 4;
+			handler->database_type = 4;
 			break;
 	}
 
-	return loc;
+	return handler;
 }
 
-// Description: This function to set the DB access type.
-int32_t IP2Proxy_open_mem(IP2Proxy *loc, enum IP2Proxy_mem_type mtype)
+// Set lookup mode (Will deprecate in next major version update)
+int32_t IP2Proxy_open_mem(IP2Proxy *handler, enum IP2Proxy_lookup_mode mode)
 {
-	if(loc == NULL)
-		return -1;
-
-	// Once IP2Proxy_open_mem is called, it can not be called again till IP2Proxy_close is called
-	if(openMemFlag != 0)
-		return -1;
-
-	openMemFlag = 1;
-
-	if(mtype == IP2PROXY_FILE_IO)
-	{
-		return 0; //Just return, by default its IP2PROXY_FILE_IO
-	}
-	else if(mtype == IP2PROXY_CACHE_MEMORY)
-	{
-		return IP2Proxy_DB_set_memory_cache(loc->filehandle);
-	}
-	else if (mtype == IP2PROXY_SHARED_MEMORY)
-	{
-		return IP2Proxy_DB_set_shared_memory(loc->filehandle);
-	}
-	else
-		return -1;
+	return IP2Proxy_set_lookup_mode(handler, mode);
 }
 
-// Description: Close the IP2Proxy database file
-uint32_t IP2Proxy_close(IP2Proxy *loc)
+
+// Set lookup mode
+int32_t IP2Proxy_set_lookup_mode(IP2Proxy *handler, enum IP2Proxy_lookup_mode mode)
 {
-	openMemFlag = 0;
-	if(loc != NULL)
-	{
-		IP2Proxy_DB_close(loc->filehandle);
-		free(loc);
+	// BIN database is not loaded
+	if (handler == NULL) {
+		return -1;
+	}
+
+	// Existing database already loaded into memory
+	if (is_in_memory != 0) {
+		return -1;
+	}
+
+	// Mark database loaded into memory
+	is_in_memory = 1;
+
+	if (mode == IP2PROXY_FILE_IO) {
+		return 0;
+	} else if (mode == IP2PROXY_CACHE_MEMORY) {
+		return IP2Proxy_set_memory_cache(handler->file);
+	} else if (mode == IP2PROXY_SHARED_MEMORY) {
+		return IP2Proxy_set_shared_memory(handler->file);
+	} else {
+		return -1;
+	}
+}
+
+// Close IP2Proxy handler
+uint32_t IP2Proxy_close(IP2Proxy *handler)
+{
+	is_in_memory = 0;
+
+	if (handler != NULL) {
+		IP2Proxy_close_memory(handler->file);
+		free(handler);
 	}
 
 	return 0;
 }
 
-// Description: Delete IP2Proxy shared memory if its present.
+// Clear memory object (Will deprecate in next major version update)
 void IP2Proxy_delete_shm()
 {
-	IP2Proxy_DB_del_shm();
+	IP2Proxy_delete_shared_memory();
 }
 
-// Description: Startup
-static int IP2Proxy_initialize(IP2Proxy *loc)
+// Clear memory object
+void IP2Proxy_clear_memory()
 {
-	loc->databasetype   = IP2Proxy_read8(loc->filehandle, 1);
-	loc->databasecolumn = IP2Proxy_read8(loc->filehandle, 2);
-	loc->databaseyear	= IP2Proxy_read8(loc->filehandle, 3);
-	loc->databasemonth  = IP2Proxy_read8(loc->filehandle, 4);
-	loc->databaseday   = IP2Proxy_read8(loc->filehandle, 5);
+	IP2Proxy_delete_shared_memory();
+}
 
-	loc->ipv4databasecount  = IP2Proxy_read32(loc->filehandle, 6);
-	loc->ipv4databaseaddr   = IP2Proxy_read32(loc->filehandle, 10);
+// Initialize database structures
+static int IP2Proxy_initialize(IP2Proxy *handler)
+{
+	handler->database_type = IP2Proxy_read8(handler->file, 1);
+	handler->database_column = IP2Proxy_read8(handler->file, 2);
+	handler->database_year = IP2Proxy_read8(handler->file, 3);
+	handler->database_month = IP2Proxy_read8(handler->file, 4);
+	handler->database_day = IP2Proxy_read8(handler->file, 5);
 
-	loc->ipv6databasecount  = IP2Proxy_read32(loc->filehandle, 14);
-	loc->ipv6databaseaddr   = IP2Proxy_read32(loc->filehandle, 18);
-	
-	loc->ipv4indexbaseaddr 	= IP2Proxy_read32(loc->filehandle, 22);
-	loc->ipv6indexbaseaddr 	= IP2Proxy_read32(loc->filehandle, 26);
+	handler->ipv4_database_count = IP2Proxy_read32(handler->file, 6);
+	handler->ipv4_database_address = IP2Proxy_read32(handler->file, 10);
+	handler->ipv6_database_count = IP2Proxy_read32(handler->file, 14);
+	handler->ipv6_database_address = IP2Proxy_read32(handler->file, 18);
+	handler->ipv4_index_base_address = IP2Proxy_read32(handler->file, 22);
+	handler->ipv6_index_base_address = IP2Proxy_read32(handler->file, 26);
 
 	return 0;
 }
 
-// Description: Compare to ipv6 address
-int ipv6_compare(struct in6_addr_local *addr1, struct in6_addr_local *addr2)
+// Compare IPv6 address
+int IP2Proxy_ipv6_compare(struct in6_addr *addr1, struct in6_addr *addr2)
 {
-    int i, ret = 0;
-    for(i = 0 ; i < 16 ; i++ )
-    {
-        if(addr1->u.addr8[i] > addr2->u.addr8[i])
-        {
-            ret = 1;
-            break;
-        }
-        else if(addr1->u.addr8[i] < addr2->u.addr8[i])
-        {
-            ret = -1;
-            break;
-        }
-    }
+	int i, ret = 0;
+	for (i = 0; i < 16; i++) {
+		if (addr1->s6_addr[i] > addr2->s6_addr[i]) {
+			ret = 1;
+			break;
+		} else if (addr1->s6_addr[i] < addr2->s6_addr[i]) {
+			ret = -1;
+			break;
+		}
+	}
 
-    return ret;
+	return ret;
 }
 
-// Parses IPv[46] addresses and returns both the version of address
-// and binary address used for searching
-// You can implement domain name lookup here as well
-// ipversion will be -1 on error (or something other than 4 or 6)
-static ipv_t IP2Proxy_parse_addr(const char *addr)
+// Parse IP address into binary address for lookup purpose
+static ip_container IP2Proxy_parse_address(const char *ip)
 {
-    ipv_t parsed;
+	ip_container parsed;
 
-    if (IP2Proxy_ip_is_ipv4((char *)addr))
-    {
-        parsed.ipversion = 4;
-        parsed.ipv4 = IP2Proxy_ip2no((char *)addr);
-    }
-    else if (IP2Proxy_ip_is_ipv6((char *)addr))
-    {
-        // Parse the v6 address
-        inet_pton(AF_INET6, addr, &parsed.ipv6);
+	if (IP2Proxy_is_ipv4((char *) ip)) {
+		// Parse IPv4 address
+		parsed.version = 4;
+		inet_pton(AF_INET, ip, &parsed.ipv4);
+		parsed.ipv4 = htonl(parsed.ipv4);
+	} else if (IP2Proxy_is_ipv6((char *) ip)) {
+		// Parse IPv6 address
+		inet_pton(AF_INET6, ip, &parsed.ipv6);
 
 		// IPv4 Address in IPv6
-        if (parsed.ipv6.u.addr8[0] == 0 && parsed.ipv6.u.addr8[1] == 0 && parsed.ipv6.u.addr8[2] == 0 &&
-                parsed.ipv6.u.addr8[3] == 0 && parsed.ipv6.u.addr8[4] == 0 && parsed.ipv6.u.addr8[5] == 0 &&
-                parsed.ipv6.u.addr8[6] == 0 && parsed.ipv6.u.addr8[7] == 0 && parsed.ipv6.u.addr8[8] == 0 &&
-                parsed.ipv6.u.addr8[9] == 0 && parsed.ipv6.u.addr8[10] == 255 && parsed.ipv6.u.addr8[11] == 255)
-        {
-            parsed.ipversion = 4;
-            parsed.ipv4 = (parsed.ipv6.u.addr8[12] << 24) + (parsed.ipv6.u.addr8[13] << 16) + (parsed.ipv6.u.addr8[14] << 8) + parsed.ipv6.u.addr8[15];
-        }
+		if (parsed.ipv6.s6_addr[0] == 0 && parsed.ipv6.s6_addr[1] == 0 && parsed.ipv6.s6_addr[2] == 0 && parsed.ipv6.s6_addr[3] == 0 && parsed.ipv6.s6_addr[4] == 0 && parsed.ipv6.s6_addr[5] == 0 && parsed.ipv6.s6_addr[6] == 0 && parsed.ipv6.s6_addr[7] == 0 && parsed.ipv6.s6_addr[8] == 0 && parsed.ipv6.s6_addr[9] == 0 && parsed.ipv6.s6_addr[10] == 255 && parsed.ipv6.s6_addr[11] == 255) {
+			parsed.version = 4;
+			parsed.ipv4 = (parsed.ipv6.s6_addr[12] << 24) + (parsed.ipv6.s6_addr[13] << 16) + (parsed.ipv6.s6_addr[14] << 8) + parsed.ipv6.s6_addr[15];
+		}
 
 		// 6to4 Address - 2002::/16
-		else if (parsed.ipv6.u.addr8[0] == 32 && parsed.ipv6.u.addr8[1] == 2)
-		{
-			parsed.ipversion = 4;
-			parsed.ipv4 = (parsed.ipv6.u.addr8[2] << 24) + (parsed.ipv6.u.addr8[3] << 16) + (parsed.ipv6.u.addr8[4] << 8) + parsed.ipv6.u.addr8[5];
+		else if (parsed.ipv6.s6_addr[0] == 32 && parsed.ipv6.s6_addr[1] == 2) {
+			parsed.version = 4;
+			parsed.ipv4 = (parsed.ipv6.s6_addr[2] << 24) + (parsed.ipv6.s6_addr[3] << 16) + (parsed.ipv6.s6_addr[4] << 8) + parsed.ipv6.s6_addr[5];
 		}
 
 		// Teredo Address - 2001:0::/32
-		else if (parsed.ipv6.u.addr8[0] == 32 && parsed.ipv6.u.addr8[1] == 1 && parsed.ipv6.u.addr8[2] == 0 && parsed.ipv6.u.addr8[3] == 0)
-		{
-			parsed.ipversion = 4;
-			parsed.ipv4 = ~((parsed.ipv6.u.addr8[12] << 24) + (parsed.ipv6.u.addr8[13] << 16) + (parsed.ipv6.u.addr8[14] << 8) + parsed.ipv6.u.addr8[15]);
+		else if (parsed.ipv6.s6_addr[0] == 32 && parsed.ipv6.s6_addr[1] == 1 && parsed.ipv6.s6_addr[2] == 0 && parsed.ipv6.s6_addr[3] == 0) {
+			parsed.version = 4;
+			parsed.ipv4 = ~((parsed.ipv6.s6_addr[12] << 24) + (parsed.ipv6.s6_addr[13] << 16) + (parsed.ipv6.s6_addr[14] << 8) + parsed.ipv6.s6_addr[15]);
 		}
 
 		// Common IPv6 Address
-        else
-        {
-            parsed.ipversion = 6;
-        }
-    }
-    else
-    {
-        parsed.ipversion = -1;
-    }
+		else {
+			parsed.version = 6;
+		}
+	} else {
+		// Invalid IP address
+		parsed.version = -1;
+	}
 
-    return parsed;
+	return parsed;
 }
 
-// Description: Get country code
-IP2ProxyRecord *IP2Proxy_get_country_short(IP2Proxy *loc, char *ip)
+// Get country code
+IP2ProxyRecord *IP2Proxy_get_country_short(IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, COUNTRYSHORT);
+	return IP2Proxy_get_record(handler, ip, COUNTRYSHORT);
 }
 
-// Description: Get country name
-IP2ProxyRecord *IP2Proxy_get_country_long(IP2Proxy *loc, char *ip)
+// Get country name
+IP2ProxyRecord *IP2Proxy_get_country_long(IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, COUNTRYLONG);
+	return IP2Proxy_get_record(handler, ip, COUNTRYLONG);
 }
 
-// Description: Get the name of state/region
-IP2ProxyRecord *IP2Proxy_get_region(IP2Proxy *loc, char *ip)
+// Get the name of state/region
+IP2ProxyRecord *IP2Proxy_get_region(IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, REGION);
+	return IP2Proxy_get_record(handler, ip, REGION);
 }
 
-// Description: Get city name
-IP2ProxyRecord *IP2Proxy_get_city (IP2Proxy *loc, char *ip)
+// Get city name
+IP2ProxyRecord *IP2Proxy_get_city (IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, CITY);
+	return IP2Proxy_get_record(handler, ip, CITY);
 }
 
-// Description: Get ISP name
-IP2ProxyRecord *IP2Proxy_get_isp(IP2Proxy *loc, char *ip)
+// Get ISP name
+IP2ProxyRecord *IP2Proxy_get_isp(IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, ISP);
+	return IP2Proxy_get_record(handler, ip, ISP);
 }
 
-// Description: Is Proxy
-IP2ProxyRecord *IP2Proxy_is_proxy(IP2Proxy *loc, char *ip)
+// Is Proxy
+IP2ProxyRecord *IP2Proxy_is_proxy(IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, ISPROXY);
+	return IP2Proxy_get_record(handler, ip, ISPROXY);
 }
 
-// Description: Get Proxy type
-IP2ProxyRecord *IP2Proxy_get_proxy_type(IP2Proxy *loc, char *ip)
+// Get Proxy type
+IP2ProxyRecord *IP2Proxy_get_proxy_type(IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, PROXYTYPE);
+	return IP2Proxy_get_record(handler, ip, PROXYTYPE);
 }
 
-// Description: Get Domain
-IP2ProxyRecord *IP2Proxy_get_domain(IP2Proxy *loc, char *ip)
+// Get Domain
+IP2ProxyRecord *IP2Proxy_get_domain(IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, DOMAIN_);
+	return IP2Proxy_get_record(handler, ip, DOMAINNAME);
 }
 
-// Description: Get Usage type
-IP2ProxyRecord *IP2Proxy_get_usage_type(IP2Proxy *loc, char *ip)
+// Get Usage type
+IP2ProxyRecord *IP2Proxy_get_usage_type(IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, USAGETYPE);
+	return IP2Proxy_get_record(handler, ip, USAGETYPE);
 }
 
-// Description: Get ASN
-IP2ProxyRecord *IP2Proxy_get_asn(IP2Proxy *loc, char *ip)
+// Get ASN
+IP2ProxyRecord *IP2Proxy_get_asn(IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, ASN);
+	return IP2Proxy_get_record(handler, ip, ASN);
 }
 
-// Description: Get AS
-IP2ProxyRecord *IP2Proxy_get_as(IP2Proxy *loc, char *ip)
+// Get AS
+IP2ProxyRecord *IP2Proxy_get_as(IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, AS);
+	return IP2Proxy_get_record(handler, ip, AS);
 }
 
-// Description: Get Last seen
-IP2ProxyRecord *IP2Proxy_get_last_seen(IP2Proxy *loc, char *ip)
+// Get Last seen
+IP2ProxyRecord *IP2Proxy_get_last_seen(IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, LASTSEEN);
+	return IP2Proxy_get_record(handler, ip, LASTSEEN);
 }
 
-// Description: Get Threat
-IP2ProxyRecord *IP2Proxy_get_threat(IP2Proxy *loc, char *ip)
+// Get Threat
+IP2ProxyRecord *IP2Proxy_get_threat(IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, THREAT);
+	return IP2Proxy_get_record(handler, ip, THREAT);
 }
 
-// Description: Get all records of an IP address
-IP2ProxyRecord *IP2Proxy_get_all(IP2Proxy *loc, char *ip)
+// Get all records of an IP address
+IP2ProxyRecord *IP2Proxy_get_all(IP2Proxy *handler, char *ip)
 {
-	return IP2Proxy_get_record(loc, ip, ALL);
+	return IP2Proxy_get_record(handler, ip, ALL);
 }
 
-// Description: fill the record fields with error message
+// fill the record fields with error message
 static IP2ProxyRecord *IP2Proxy_bad_record(const char *message)
 {
 	IP2ProxyRecord *record = IP2Proxy_new_record();
@@ -384,253 +395,195 @@ static IP2ProxyRecord *IP2Proxy_bad_record(const char *message)
 }
 
 
-// Description: read the record data
-static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *loc, uint32_t rowaddr, uint32_t mode)
+// read the record data
+static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint32_t rowaddr, uint32_t mode)
 {
-	uint8_t dbtype = loc->databasetype;
-	FILE *handle = loc->filehandle;
+	uint8_t dbtype = handler->database_type;
+	FILE *handle = handler->file;
 	IP2ProxyRecord *record = IP2Proxy_new_record();
 	record->is_proxy = "-1";
 
-	if ((mode & ISPROXY) && (IP2PROXY_COUNTRY_POSITION[dbtype] != 0))
-	{
-		if(!record->country_short)
-			record->country_short = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_COUNTRY_POSITION[dbtype]-1)));
+	if ((mode & ISPROXY) && (IP2PROXY_COUNTRY_POSITION[dbtype] != 0)) {
+		if (!record->country_short) {
+			record->country_short = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_COUNTRY_POSITION[dbtype]-1)));
+		}
 
 		if (strcmp(record->country_short, "-") == 0) {
 			record->is_proxy = "0";
-		}
-		else{
-			if(!record->proxy_type)
-				record->proxy_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_PROXY_TYPE_POSITION[dbtype]-1)));
+		} else {
+			if (!record->proxy_type) {
+				record->proxy_type = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_PROXY_TYPE_POSITION[dbtype]-1)));
+			}
 
 			if (strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0) {
 				record->is_proxy = "2";
-			}
-			else{
+			} else {
 				record->is_proxy = "1";
 			}
 
-			if (IP2PROXY_PROXY_TYPE_POSITION[dbtype] == 0)
-			{
+			if (IP2PROXY_PROXY_TYPE_POSITION[dbtype] == 0) {
 				record->proxy_type = strdup(NOT_SUPPORTED);
 			}
 		}
-	}
-	else
-	{
+	} else {
 		record->is_proxy = "-1";
 	}
 
-	if ((mode & COUNTRYSHORT) && (IP2PROXY_COUNTRY_POSITION[dbtype] != 0))
-	{
-		if(!record->country_short)
-			record->country_short = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_COUNTRY_POSITION[dbtype]-1)));
-	}
-	else
-	{
-		if(!record->country_short)
+	if ((mode & COUNTRYSHORT) && (IP2PROXY_COUNTRY_POSITION[dbtype] != 0)) {
+		if (!record->country_short) {
+			record->country_short = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_COUNTRY_POSITION[dbtype]-1)));
+		}
+	} else {
+		if (!record->country_short) {
 			record->country_short = strdup(NOT_SUPPORTED);
+		}
 	}
 
-	if ((mode & COUNTRYLONG) && (IP2PROXY_COUNTRY_POSITION[dbtype] != 0))
-	{
-		if(!record->country_long)
-			record->country_long = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_COUNTRY_POSITION[dbtype]-1))+3);
-	}
-	else
-	{
-		if(!record->country_long)
+	if ((mode & COUNTRYLONG) && (IP2PROXY_COUNTRY_POSITION[dbtype] != 0)) {
+		if (!record->country_long) {
+			record->country_long = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_COUNTRY_POSITION[dbtype]-1))+3);
+		}
+	} else {
+		if (!record->country_long) {
 			record->country_long = strdup(NOT_SUPPORTED);
+		}
 	}
 
-	if ((mode & REGION) && (IP2PROXY_REGION_POSITION[dbtype] != 0))
-	{
-		if(!record->region)
-			record->region = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_REGION_POSITION[dbtype]-1)));
-	}
-	else
-	{
-		if(!record->region)
+	if ((mode & REGION) && (IP2PROXY_REGION_POSITION[dbtype] != 0)) {
+		if (!record->region) {
+			record->region = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_REGION_POSITION[dbtype]-1)));
+		}
+	} else {
+		if (!record->region)
 			record->region = strdup(NOT_SUPPORTED);
 	}
 
-	if ((mode & CITY) && (IP2PROXY_CITY_POSITION[dbtype] != 0))
-	{
-		if(!record->city)
-			record->city = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_CITY_POSITION[dbtype]-1)));
-	}
-	else
-	{
-		if(!record->city)
+	if ((mode & CITY) && (IP2PROXY_CITY_POSITION[dbtype] != 0)) {
+		if (!record->city) {
+			record->city = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_CITY_POSITION[dbtype]-1)));
+		}
+	} else {
+		if (!record->city) {
 			record->city = strdup(NOT_SUPPORTED);
+		}
 	}
 
-	if ((mode & ISP) && (IP2PROXY_ISP_POSITION[dbtype] != 0))
-	{
-		if(!record->isp)
-			record->isp = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_ISP_POSITION[dbtype]-1)));
-	}
-	else
-	{
-		if(!record->isp)
+	if ((mode & ISP) && (IP2PROXY_ISP_POSITION[dbtype] != 0)) {
+		if (!record->isp) {
+			record->isp = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_ISP_POSITION[dbtype]-1)));
+		}
+	} else {
+		if (!record->isp) {
 			record->isp = strdup(NOT_SUPPORTED);
+		}
 	}
 
-	if ((mode & PROXYTYPE) && (IP2PROXY_PROXY_TYPE_POSITION[dbtype] != 0))
-	{
-		if(!record->proxy_type)
-			record->proxy_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_PROXY_TYPE_POSITION[dbtype]-1)));
-	}
-	else
-	{
-		if(!record->proxy_type)
+	if ((mode & PROXYTYPE) && (IP2PROXY_PROXY_TYPE_POSITION[dbtype] != 0)) {
+		if (!record->proxy_type)
+			record->proxy_type = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_PROXY_TYPE_POSITION[dbtype]-1)));
+	} else {
+		if (!record->proxy_type) {
 			record->proxy_type = strdup(NOT_SUPPORTED);
+		}
 	}
 
-	if ((mode & DOMAIN_) && (IP2PROXY_DOMAIN_POSITION[dbtype] != 0))
-	{
-		if(!record->domain)
-			record->domain = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_DOMAIN_POSITION[dbtype]-1)));
-	}
-	else
-	{
-		if(!record->domain)
+	if ((mode & DOMAINNAME) && (IP2PROXY_DOMAIN_POSITION[dbtype] != 0)) {
+		if (!record->domain) {
+			record->domain = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_DOMAIN_POSITION[dbtype]-1)));
+		}
+	} else {
+		if (!record->domain) {
 			record->domain = strdup(NOT_SUPPORTED);
+		}
 	}
 
-	if ((mode & USAGETYPE) && (IP2PROXY_USAGE_TYPE_POSITION[dbtype] != 0))
-	{
-		if(!record->usage_type)
-			record->usage_type = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_USAGE_TYPE_POSITION[dbtype]-1)));
-	}
-	else
-	{
-		if(!record->usage_type)
+	if ((mode & USAGETYPE) && (IP2PROXY_USAGE_TYPE_POSITION[dbtype] != 0)) {
+		if (!record->usage_type) {
+			record->usage_type = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_USAGE_TYPE_POSITION[dbtype]-1)));
+		}
+	} else {
+		if (!record->usage_type) {
 			record->usage_type = strdup(NOT_SUPPORTED);
+		}
 	}
 
-	if ((mode & ASN) && (IP2PROXY_ASN_POSITION[dbtype] != 0))
-	{
-		if(!record->asn)
-			record->asn = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_ASN_POSITION[dbtype]-1)));
-	}
-	else
-	{
-		if(!record->asn)
+	if ((mode & ASN) && (IP2PROXY_ASN_POSITION[dbtype] != 0)) {
+		if (!record->asn) {
+			record->asn = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_ASN_POSITION[dbtype]-1)));
+		}
+	} else {
+		if (!record->asn) {
 			record->asn = strdup(NOT_SUPPORTED);
+		}
 	}
 
-	if ((mode & AS) && (IP2PROXY_AS_POSITION[dbtype] != 0))
-	{
-		if(!record->as_)
-			record->as_ = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_AS_POSITION[dbtype]-1)));
-	}
-	else
-	{
-		if(!record->as_)
+	if ((mode & AS) && (IP2PROXY_AS_POSITION[dbtype] != 0)) {
+		if (!record->as_) {
+			record->as_ = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_AS_POSITION[dbtype]-1)));
+		}
+	} else {
+		if (!record->as_) {
 			record->as_ = strdup(NOT_SUPPORTED);
+		}
 	}
 
-	if ((mode & LASTSEEN) && (IP2PROXY_LAST_SEEN_POSITION[dbtype] != 0))
-	{
-		if(!record->last_seen)
-			record->last_seen = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_LAST_SEEN_POSITION[dbtype]-1)));
-	}
-	else
-	{
-		if(!record->last_seen)
+	if ((mode & LASTSEEN) && (IP2PROXY_LAST_SEEN_POSITION[dbtype] != 0)) {
+		if (!record->last_seen) {
+			record->last_seen = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_LAST_SEEN_POSITION[dbtype]-1)));
+		}
+	} else {
+		if (!record->last_seen) {
 			record->last_seen = strdup(NOT_SUPPORTED);
+		}
 	}
 
-	if ((mode & THREAT) && (IP2PROXY_THREAT_POSITION[dbtype] != 0))
-	{
-		if(!record->threat)
-			record->threat = IP2Proxy_readStr(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_THREAT_POSITION[dbtype]-1)));
-	}
-	else
-	{
-		if(!record->threat)
+	if ((mode & THREAT) && (IP2PROXY_THREAT_POSITION[dbtype] != 0)) {
+		if (!record->threat) {
+			record->threat = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_THREAT_POSITION[dbtype]-1)));
+		}
+	} else {
+		if (!record->threat) {
 			record->threat = strdup(NOT_SUPPORTED);
+		}
 	}
 
 	return record;
 }
 
-// Description: Get record for a IPv6 from database
-static IP2ProxyRecord *IP2Proxy_get_ipv6_record(IP2Proxy *loc, char *ipstring, uint32_t mode, ipv_t parsed_ipv)
+// Get the location data
+static IP2ProxyRecord *IP2Proxy_get_record(IP2Proxy *handler, char *ip, uint32_t mode)
 {
-    FILE *handle = loc->filehandle;
-    uint32_t baseaddr = loc->ipv6databaseaddr;
-    uint32_t dbcolumn = loc->databasecolumn;
-    uint32_t ipv6indexbaseaddr = loc->ipv6indexbaseaddr;
+	ip_container parsed_ip = IP2Proxy_parse_address(ip);
 
-    uint32_t low = 0;
-    uint32_t high = loc->ipv6databasecount;
-    uint32_t mid = 0;
+	if (parsed_ip.version == 4) {
+		return IP2Proxy_get_ipv4_record(handler, mode, parsed_ip);
+	}
+	if (parsed_ip.version == 6) {
+		if (handler->ipv6_database_count == 0) {
+			return IP2Proxy_bad_record(IPV6_ADDRESS_MISSING_IN_IPV4_BIN);
+		}
 
-    struct in6_addr_local ipfrom;
-    struct in6_addr_local ipto;
-    struct in6_addr_local ipno;
-
-    ipno = parsed_ipv.ipv6;
-
-    if (!high)
-    {
-        return NULL;
-    }
-
-    if (ipv6indexbaseaddr > 0)
-    {
-        // use the index table
-        uint32_t ipnum1 = (ipno.u.addr8[0] * 256) + ipno.u.addr8[1];
-        uint32_t indexpos = ipv6indexbaseaddr + (ipnum1 << 3);
-
-        low = IP2Proxy_read32(handle, indexpos);
-        high = IP2Proxy_read32(handle, indexpos + 4);
-    }
-
-    while (low <= high)
-    {
-        mid = (uint32_t)((low + high) >> 1);
-        ipfrom = IP2Proxy_readIPv6Address(handle, baseaddr + mid * (dbcolumn * 4 + 12));
-        ipto = IP2Proxy_readIPv6Address(handle, baseaddr + ( mid + 1 ) * (dbcolumn * 4 + 12));
-
-        if( (ipv6_compare(&ipno, &ipfrom) >= 0) && (ipv6_compare(&ipno, &ipto) < 0))
-        {
-            return IP2Proxy_read_record(loc, baseaddr + mid * (dbcolumn * 4 + 12) + 12, mode);
-        }
-        else
-        {
-            if ( ipv6_compare(&ipno, &ipfrom) < 0)
-            {
-                high = mid - 1;
-            }
-            else
-            {
-                low = mid + 1;
-            }
-        }
-    }
-    return NULL;
+		return IP2Proxy_get_ipv6_record(handler, mode, parsed_ip);
+	} else {
+		return IP2Proxy_bad_record(INVALID_IP_ADDRESS);
+	}
 }
 
-// Description: Get record for a IPv4 from database
-static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, uint32_t mode, ipv_t parsed_ipv)
+// Get IPv4 records from database
+static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *handler, uint32_t mode, ip_container parsed_ip)
 {
-	FILE *handle = loc->filehandle;
-	uint32_t ipno;
-	uint32_t ipfrom;
-	uint32_t ipto;
+	FILE *handle = handler->file;
+	uint32_t ip_number;
+	uint32_t ip_from;
+	uint32_t ip_to;
 
-	ipno = parsed_ipv.ipv4;
+	ip_number = parsed_ip.ipv4;
 
-	if (ipno == (uint32_t) MAX_IPV4_RANGE)
-	{
-		ipno = ipno - 1;
+	if (ip_number == (uint32_t) MAX_IPV4_RANGE) {
+		ip_number = ip_number - 1;
 	}
 
-	if(loc->is_csv == 1){
+	if (handler->is_csv == 1) {
 		char line[2048];
 		char *delimiter = ";";
 		char *token;
@@ -649,26 +602,26 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 		record->last_seen = NOT_SUPPORTED;
 		record->threat = NOT_SUPPORTED;
 
-		while(fgets(line, 2048, handle) != NULL){
-			str_replace(line, "\n", "");
-			str_replace(line, "\",\"", ";");
-			str_replace(line, "\"", "");
+		while (fgets(line, 2048, handle) != NULL) {
+			IP2Proxy_replace(line, "\n", "");
+			IP2Proxy_replace(line, "\",\"", ";");
+			IP2Proxy_replace(line, "\"", "");
 
 			token = strtok(line, delimiter);
 
-			ipfrom = atoi(token);
+			ip_from = atoi(token);
 
 			token = strtok(NULL, delimiter);
 
-			ipto = atoi(token);
+			ip_to = atoi(token);
 
-			if(ipno >= ipfrom && ipno <= ipto){
+			if (ip_number >= ip_from && ip_number <= ip_to) {
 				is_found = 1;
 				break;
 			}
 		}
 
-		if(is_found == 0){
+		if (is_found == 0) {
 			record->country_short = "-";
 			record->country_long = "-";
 			record->region = "-";
@@ -686,7 +639,7 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 			return record;
 		}
 
-		switch(loc->databasetype){
+		switch (handler->database_type) {
 			case 1:
 				token = strtok(NULL, delimiter);
 				record->country_short = strdup(token);
@@ -694,10 +647,9 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 				token = strtok(NULL, delimiter);
 				record->country_long = strdup(token);
 
-				if(strcmp(record->country_short, "-") == 0){
+				if (strcmp(record->country_short, "-") == 0) {
 					record->is_proxy = "0";
-				}
-				else{
+				} else {
 					record->is_proxy = "1";
 				}
 
@@ -713,13 +665,11 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 				token = strtok(NULL, delimiter);
 				record->country_long = strdup(token);
 
-				if(strcmp(record->country_short, "-") == 0){
+				if (strcmp(record->country_short, "-") == 0) {
 					record->is_proxy = "0";
-				}
-				else if(strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0){
+				} else if (strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0) {
 					record->is_proxy = "0";
-				}
-				else{
+				} else {
 					record->is_proxy = "1";
 				}
 
@@ -742,13 +692,11 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 				record->city = strdup(token);
 
 
-				if(strcmp(record->country_short, "-") == 0){
+				if (strcmp(record->country_short, "-") == 0) {
 					record->is_proxy = "0";
-				}
-				else if(strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0){
+				} else if (strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0) {
 					record->is_proxy = "0";
-				}
-				else{
+				} else {
 					record->is_proxy = "1";
 				}
 
@@ -773,13 +721,11 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 				token = strtok(NULL, delimiter);
 				record->isp = strdup(token);
 
-				if(strcmp(record->country_short, "-") == 0){
+				if (strcmp(record->country_short, "-") == 0) {
 					record->is_proxy = "0";
-				}
-				else if(strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0){
+				} else if (strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0) {
 					record->is_proxy = "0";
-				}
-				else{
+				} else {
 					record->is_proxy = "1";
 				}
 
@@ -788,209 +734,594 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *loc, char *ipstring, u
 
 		return NULL;
 	}
-	else{
-		uint32_t baseaddr = loc->ipv4databaseaddr;
-		uint32_t dbcolumn = loc->databasecolumn;
-		uint32_t ipv4indexbaseaddr = loc->ipv4indexbaseaddr;
 
-		uint32_t low = 0;
-		uint32_t high = loc->ipv4databasecount;
-		uint32_t mid = 0;
+	uint32_t base_address = handler->ipv4_database_address;
+	uint32_t database_column = handler->database_column;
+	uint32_t ipv4_index_base_address = handler->ipv4_index_base_address;
 
-		if (ipv4indexbaseaddr > 0)
-		{
-			// use the index table 
-			uint32_t ipnum1n2 = (uint32_t) ipno >> 16;
-			uint32_t indexpos = ipv4indexbaseaddr + (ipnum1n2 << 3);
+	uint32_t low = 0;
+	uint32_t high = handler->ipv4_database_count;
+	uint32_t mid = 0;
 
-			low = IP2Proxy_read32(handle, indexpos);
-			high = IP2Proxy_read32(handle, indexpos + 4);
-		}
+	if (ipv4_index_base_address > 0) {
+		uint32_t number = (uint32_t) ip_number >> 16;
+		uint32_t index = ipv4_index_base_address + (number << 3);
 
-		while (low <= high)
-		{
-			mid = (uint32_t)((low + high) >> 1);
-			ipfrom = IP2Proxy_read32(handle, baseaddr + mid * dbcolumn * 4);
-			ipto 	= IP2Proxy_read32(handle, baseaddr + (mid + 1) * dbcolumn * 4);
+		low = IP2Proxy_read32(handle, index);
+		high = IP2Proxy_read32(handle, index + 4);
+	}
 
-			if ((ipno >= ipfrom) && (ipno < ipto))
-			{
-				return IP2Proxy_read_record(loc, baseaddr + (mid * dbcolumn * 4), mode);
-			}
-			else
-			{
-				if ( ipno < ipfrom )
-				{
-					high = mid - 1;
-				}
-				else
-				{
-					low = mid + 1;
-				}
+	while (low <= high) {
+		mid = (uint32_t)((low + high) >> 1);
+		ip_from = IP2Proxy_read32(handle, base_address + mid * database_column * 4);
+		ip_to = IP2Proxy_read32(handle, base_address + (mid + 1) * database_column * 4);
+
+		if ((ip_number >= ip_from) && (ip_number < ip_to)) {
+			return IP2Proxy_read_record(handler, base_address + (mid * database_column * 4), mode);
+		} else {
+			if (ip_number < ip_from) {
+				high = mid - 1;
+			} else {
+				low = mid + 1;
 			}
 		}
 	}
-
 	return NULL;
 }
 
-
-
-// Description: Get the location data
-static IP2ProxyRecord *IP2Proxy_get_record(IP2Proxy *loc, char *ipstring, uint32_t mode)
+// Get IPv6 records from database
+static IP2ProxyRecord * IP2Proxy_get_ipv6_record(IP2Proxy *handler, uint32_t mode, ip_container parsed_ip)
 {
-	if (strcmp(ipstring, "FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF") == 0)
-	{
-		ipstring = "FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFE";
+	FILE *handle = handler->file;
+	uint32_t base_address = handler->ipv6_database_address;
+	uint32_t database_column = handler->database_column;
+	uint32_t ipv6_index_base_address = handler->ipv6_index_base_address;
+
+	uint32_t low = 0;
+	uint32_t high = handler->ipv6_database_count;
+	uint32_t mid = 0;
+
+	struct in6_addr ip_from;
+	struct in6_addr ip_to;
+	struct in6_addr ip_number;
+
+	ip_number = parsed_ip.ipv6;
+
+	if (!high) {
+		return NULL;
 	}
 
-	ipv_t parsed_ipv = IP2Proxy_parse_addr(ipstring);
+	if (ipv6_index_base_address > 0) {
+		uint32_t number = (ip_number.s6_addr[0] * 256) + ip_number.s6_addr[1];
+		uint32_t index = ipv6_index_base_address + (number << 3);
 
-	if (parsed_ipv.ipversion == 4)
-	{
-		//process IPv4
-		return IP2Proxy_get_ipv4_record(loc, ipstring, mode, parsed_ipv);
+		low = IP2Proxy_read32(handle, index);
+		high = IP2Proxy_read32(handle, index + 4);
 	}
-    if (parsed_ipv.ipversion == 6)
-    {
-        return IP2Proxy_get_ipv6_record(loc, ipstring, mode, parsed_ipv);
-    }
-	else
-    {
-        return IP2Proxy_bad_record(INVALID_IP_ADDRESS);
+
+	while (low <= high) {
+		mid = (uint32_t)((low + high) >> 1);
+		ip_from = IP2Proxy_read_ipv6_address(handle, base_address + mid * (database_column * 4 + 12));
+		ip_to = IP2Proxy_read_ipv6_address(handle, base_address + ( mid + 1 ) * (database_column * 4 + 12));
+
+		if ((IP2Proxy_ipv6_compare(&ip_number, &ip_from) >= 0) && (IP2Proxy_ipv6_compare(&ip_number, &ip_to) < 0)) {
+			return IP2Proxy_read_record(handler, base_address + mid * (database_column * 4 + 12) + 12, mode);
+		} else {
+			if (IP2Proxy_ipv6_compare(&ip_number, &ip_from) < 0) {
+				high = mid - 1;
+			} else {
+				low = mid + 1;
+			}
+		}
 	}
+	return NULL;
 }
 
-// Description: Initialize the record object
+// Initialize the record object
 static IP2ProxyRecord *IP2Proxy_new_record()
 {
 	IP2ProxyRecord *record = (IP2ProxyRecord *) calloc(1, sizeof(IP2ProxyRecord));
 	return record;
 }
 
-// Description: Free the record object
+// Free the record object
 void IP2Proxy_free_record(IP2ProxyRecord *record)
 {
 
-	if (record == NULL)
+	if (record == NULL) {
 		return;
+	}
 
-	if(record->country_short != NULL)
+	if (record->country_short != NULL) {
 		free(record->country_short);
-	if(record->country_long != NULL)
+	}
+	
+	if (record->country_long != NULL) {
 		free(record->country_long);
-	if(record->region != NULL)
+	}
+	
+	if (record->region != NULL) {
 		free(record->region);
-	if(record->city != NULL)
+	}
+	
+	if (record->city != NULL) {
 		free(record->city);
-	if(record->isp != NULL)
+	}
+	
+	if (record->isp != NULL) {
 		free(record->isp);
-	if(record->proxy_type != NULL)
+	}
+
+	if (record->proxy_type != NULL) {
 		free(record->proxy_type);
-	if(record->domain != NULL)
+	}
+
+	if (record->domain != NULL) {
 		free(record->domain);
-	if(record->usage_type != NULL)
+	}
+
+	if (record->usage_type != NULL) {
 		free(record->usage_type);
-	if(record->asn != NULL)
+	}
+
+	if (record->asn != NULL) {
 		free(record->asn);
-	if(record->as_ != NULL)
+	}
+
+	if (record->as_ != NULL) {
 		free(record->as_);
-	if(record->last_seen != NULL)
+	}
+
+	if (record->last_seen != NULL) {
 		free(record->last_seen);
-	if(record->threat != NULL)
+	}
+
+	if (record->threat != NULL) {
 		free(record->threat);
+	}
 
 	free(record);
 }
 
-// Description: Convert the IP address (v4) into number
-static uint32_t IP2Proxy_ip2no(char* ipstring)
+// Set to use memory caching
+int32_t IP2Proxy_set_memory_cache(FILE *file)
 {
-	uint32_t ip = inet_addr(ipstring);
-	uint8_t *ptr = (uint8_t *) &ip;
-	uint32_t a = 0;
+	struct stat buffer;
+	lookup_mode = IP2PROXY_CACHE_MEMORY;
 
-	if (ipstring != NULL)
-	{
-		a =  (uint8_t)(ptr[3]);
-		a += (uint8_t)(ptr[2]) * 256;
-		a += (uint8_t)(ptr[1]) * 256 * 256;
-		a += (uint8_t)(ptr[0]) * 256 * 256 * 256;
+	if (fstat(fileno(file), &buffer) == -1) {
+		lookup_mode = IP2PROXY_FILE_IO;
+		return -1;
 	}
-	return a;
+
+	if ((memory_pointer = malloc(buffer.st_size + 1)) == NULL) {
+		lookup_mode = IP2PROXY_FILE_IO;
+		return -1;
+	}
+
+	if (IP2Proxy_load_database_into_memory(file, memory_pointer, buffer.st_size) == -1) {
+		lookup_mode = IP2PROXY_FILE_IO;
+		free(memory_pointer);
+		return -1;
+	}
+
+	return 0;
 }
 
+// Set to use shared memory
+#ifndef WIN32
+int32_t IP2Proxy_set_shared_memory(FILE *file)
+{
+	struct stat buffer;
+	int32_t is_dababase_loaded = 1;
+	void *addr = (void*)MAP_ADDR;
 
-// Description: Check if this was an IPv4 address
-static int IP2Proxy_ip_is_ipv4 (char* ipaddr)
+	lookup_mode = IP2PROXY_SHARED_MEMORY;
+
+	// New shared memory object is created
+	if ((shm_fd = shm_open(IP2PROXY_SHM, O_RDWR | O_CREAT | O_EXCL, 0777)) != -1) {
+		is_dababase_loaded = 0;
+	}
+
+	// Failed to create new shared memory object
+	else if ((shm_fd = shm_open(IP2PROXY_SHM, O_RDWR , 0777)) == -1) {
+		lookup_mode = IP2PROXY_FILE_IO;
+		return -1;
+	}
+
+	if (fstat(fileno(file), &buffer) == -1) {
+		close(shm_fd);
+
+		if (is_dababase_loaded == 0) {
+			shm_unlink(IP2PROXY_SHM);
+		}
+		
+		lookup_mode = IP2PROXY_FILE_IO;
+		
+		return -1;
+	}
+
+	if (is_dababase_loaded == 0 && ftruncate(shm_fd, buffer.st_size + 1) == -1) {
+		close(shm_fd);
+		shm_unlink(IP2PROXY_SHM);
+		lookup_mode = IP2PROXY_FILE_IO;
+		return -1;
+	}
+
+	memory_pointer = mmap(addr, buffer.st_size + 1, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+
+	if (memory_pointer == (void *) -1) {
+		close(shm_fd);
+
+		if (is_dababase_loaded == 0) {
+			shm_unlink(IP2PROXY_SHM);
+		}
+		
+		lookup_mode = IP2PROXY_FILE_IO;
+
+		return -1;
+	}
+	
+	if (is_dababase_loaded == 0) {
+		if (IP2Proxy_load_database_into_memory(file, memory_pointer, buffer.st_size) == -1) {
+			munmap(memory_pointer, buffer.st_size);
+			close(shm_fd);
+			shm_unlink(IP2PROXY_SHM);
+			lookup_mode = IP2PROXY_FILE_IO;
+			return -1;
+		}
+	}
+
+	return 0;
+}
+#else
+#ifdef WIN32
+int32_t IP2Proxy_set_shared_memory(FILE *file)
+{
+	struct stat buffer;
+	int32_t is_dababase_loaded = 1;
+
+	lookup_mode = IP2PROXY_SHARED_MEMORY;
+
+	if (fstat(fileno(file), &buffer) == -1) {
+		lookup_mode = IP2PROXY_FILE_IO;
+		return -1;
+	}
+
+	shm_fd = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, buffer.st_size + 1, TEXT(IP2PROXY_SHM));
+
+	if (shm_fd == NULL) {
+		lookup_mode = IP2PROXY_FILE_IO;
+		return -1;
+	}
+
+	is_dababase_loaded = (GetLastError() == ERROR_ALREADY_EXISTS);
+	memory_pointer = MapViewOfFile(shm_fd, FILE_MAP_WRITE, 0, 0, 0);
+
+	if (memory_pointer == NULL) {
+		UnmapViewOfFile(memory_pointer);
+		lookup_mode = IP2PROXY_FILE_IO;
+		return -1;
+	}
+
+	if (is_dababase_loaded == 0) {
+		if (IP2Proxy_load_database_into_memory(file, memory_pointer, buffer.st_size) == -1) {
+			UnmapViewOfFile(memory_pointer);
+			CloseHandle(shm_fd);
+			lookup_mode = IP2PROXY_FILE_IO;
+			return -1;
+		}
+	}
+
+	return 0;
+}
+#endif
+#endif
+
+// Load BIN file into memory
+int32_t IP2Proxy_load_database_into_memory(FILE *file, void *memory, int64_t size)
+{
+	fseek(file, SEEK_SET, 0);
+	
+	if (fread(memory, size, 1, file) != 1) {
+		return -1;
+	}
+
+	return 0;
+}
+
+// Close the memory
+int32_t IP2Proxy_close_memory(FILE *file)
+{
+	struct stat buffer;
+	
+	if (lookup_mode == IP2PROXY_CACHE_MEMORY) {
+		if (memory_pointer != NULL) {
+			free(memory_pointer);
+		}
+	} else if (lookup_mode == IP2PROXY_SHARED_MEMORY) {
+		if (memory_pointer != NULL) {
+#ifndef	WIN32
+			if (fstat(fileno(file), &buffer) == 0) {
+				munmap(memory_pointer, buffer.st_size);
+			}
+
+			close(shm_fd);
+#else
+#ifdef WIN32
+			UnmapViewOfFile(memory_pointer);
+			CloseHandle(shm_fd);
+#endif
+#endif
+		}
+	}
+	
+	if (file != NULL) {
+		fclose(file);
+	}
+	
+	lookup_mode = IP2PROXY_FILE_IO;
+	return 0;
+}
+
+#ifndef	WIN32
+// Remove shared memory object
+void IP2Proxy_delete_shared_memory()
+{
+	shm_unlink(IP2PROXY_SHM);
+}
+#else
+#ifdef WIN32
+void IP2Proxy_delete_shared_memory()
+{
+}
+#endif
+#endif
+
+// Check if address is IPv4
+static int IP2Proxy_is_ipv4(char *ip)
 {
 	struct sockaddr_in sa;
-	return inet_pton(AF_INET, ipaddr, &(sa.sin_addr));
+	return inet_pton(AF_INET, ip, &sa.sin_addr);
 }
 
-// Description: Check if this was an IPv6 address
-static int IP2Proxy_ip_is_ipv6 (char* ipaddr)
+// Check if address is IPv6
+static int IP2Proxy_is_ipv6(char *ip)
 {
-    struct in6_addr_local ipv6;
-    return  inet_pton(AF_INET6, ipaddr, &ipv6);
+	struct in6_addr result;
+	return inet_pton(AF_INET6, ip, &result);
 }
 
-// Description: Return API version as string
-char *IP2Proxy_get_module_version(void)
+// Get API version numeric
+unsigned long int IP2Proxy_version_number(void)
 {
-	static char version[16];
-
-	snprintf(version, sizeof(version), "%d.%d.%d", API_VERSION_MAJOR, API_VERSION_MINOR, API_VERSION_RELEASE);
-	
-	return version ;
+	return (API_VERSION_NUMERIC);
 }
 
-char *IP2Proxy_get_database_version(IP2Proxy *loc){
+// Get API version as string
+char *IP2Proxy_version_string(void)
+{
+	static char version[64];
+	sprintf(version, "%d.%d.%d", API_VERSION_MAJOR, API_VERSION_MINOR, API_VERSION_RELEASE);
+	return (version);
+}
+
+// Get database version
+char *IP2Proxy_get_database_version(IP2Proxy *handler)
+{
 	static char version[8];
 
-	snprintf(version, sizeof(version), "%02d%02d%02d", loc->databaseyear, loc->databasemonth, loc->databaseday);
+	snprintf(version, sizeof(version), "%02d%02d%02d", handler->database_year, handler->database_month, handler->database_day);
 
 	return version;
 }
 
-char *IP2Proxy_get_package_version(IP2Proxy *loc){
+char *IP2Proxy_get_package_version(IP2Proxy *handler)
+{
 	static char version[3];
 
-	snprintf(version, sizeof(version), "%d", loc->databasetype);
+	snprintf(version, sizeof(version), "%d", handler->database_type);
 
 	return version;
 }
 
-void str_replace(char *target, const char *needle, const char *replacement)
+void IP2Proxy_replace(char *target, const char *needle, const char *replacement)
 {
-    char buffer[1024] = { 0 };
-    char *insert_point = &buffer[0];
-    const char *tmp = target;
-    size_t needle_len = strlen(needle);
-    size_t repl_len = strlen(replacement);
+	char buffer[1024] = { 0 };
+	char *insert_point = &buffer[0];
+	const char *tmp = target;
+	size_t needle_length = strlen(needle);
+	size_t string_length = strlen(replacement);
 
-    while (1) {
-        const char *p = strstr(tmp, needle);
+	while (1) {
+		const char *p = strstr(tmp, needle);
 
-        // walked past last occurrence of needle; copy remaining part
-        if (p == NULL) {
-            strcpy(insert_point, tmp);
-            break;
-        }
+		// Walked past last occurrence of needle; copy remaining part
+		if (p == NULL) {
+			strcpy(insert_point, tmp);
+			break;
+		}
 
-        // copy part before needle
-        memcpy(insert_point, tmp, p - tmp);
-        insert_point += p - tmp;
+		// Copy part before needle
+		memcpy(insert_point, tmp, p - tmp);
+		insert_point += p - tmp;
 
-        // copy replacement string
-        memcpy(insert_point, replacement, repl_len);
-        insert_point += repl_len;
+		// Copy replacement string
+		memcpy(insert_point, replacement, string_length);
+		insert_point += string_length;
 
-        // adjust pointers, move on
-        tmp = p + needle_len;
-    }
+		// Adjust pointers, move on
+		tmp = p + needle_length;
+	}
 
-    // write altered string back to target
-    strcpy(target, buffer);
+	// Write altered string back to target
+	strcpy(target, buffer);
 }
 
+struct in6_addr IP2Proxy_read_ipv6_address(FILE *handle, uint32_t position)
+{
+	int i, j;
+	struct in6_addr addr6;
+	
+	for (i = 0, j = 15; i < 16; i++, j--) {
+		addr6.s6_addr[i] = IP2Proxy_read8(handle, position + j);
+	}
+
+	return addr6;
+}
+
+uint32_t IP2Proxy_read32(FILE *handle, uint32_t position)
+{
+	uint8_t byte1 = 0;
+	uint8_t byte2 = 0;
+	uint8_t byte3 = 0;
+	uint8_t byte4 = 0;
+	uint8_t *cache_shm = memory_pointer;
+	size_t temp;
+	
+	// Read from file
+	if (lookup_mode == IP2PROXY_FILE_IO && handle != NULL) {
+		fseek(handle, position - 1, 0);
+		temp = fread(&byte1, 1, 1, handle);
+
+		if (temp == 0) {
+			return 0;
+		}
+
+		temp = fread(&byte2, 1, 1, handle);
+
+		if (temp == 0) {
+			return 0;
+		}
+
+		temp = fread(&byte3, 1, 1, handle);
+		
+		if (temp == 0) {
+			return 0;
+		}
+		
+		temp = fread(&byte4, 1, 1, handle);
+		
+		if (temp == 0) {
+			return 0;
+		}
+	} else {
+		byte1 = cache_shm[position - 1];
+		byte2 = cache_shm[position];
+		byte3 = cache_shm[position + 1];
+		byte4 = cache_shm[position + 2];
+	}
+
+	return ((byte4 << 24) | (byte3 << 16) | (byte2 << 8) | (byte1));
+}
+
+uint8_t IP2Proxy_read8(FILE *handle, uint32_t position)
+{
+	uint8_t ret = 0;
+	uint8_t *cache_shm = memory_pointer;
+	size_t temp;
+
+	if (lookup_mode == IP2PROXY_FILE_IO && handle != NULL) {
+		fseek(handle, position - 1, 0);
+		temp = fread(&ret, 1, 1, handle);
+		
+		if (temp == 0) {
+			return 0;
+		}
+	} else {
+		ret = cache_shm[position - 1];
+	}
+
+	return ret;
+}
+
+char *IP2Proxy_read_string(FILE *handle, uint32_t position)
+{
+	uint8_t size = 0;
+	char *str = 0;
+	uint8_t *cache_shm = memory_pointer;
+	size_t temp;
+
+	if (lookup_mode == IP2PROXY_FILE_IO && handle != NULL) {
+		fseek(handle, position, 0);
+		temp = fread(&size, 1, 1, handle);
+		
+		if (temp == 0) {
+			return strdup("");
+		}
+
+		str = (char *)malloc(size+1);
+		memset(str, 0, size+1);
+		
+		temp = fread(str, size, 1, handle);
+		
+		if (temp == 0) {
+			free(str);
+			return strdup("");
+		}
+	} else {
+		size = cache_shm[position];
+		str = (char *)malloc(size + 1);
+		memset(str, 0, size + 1);
+		memcpy((void*) str, (void*)&cache_shm[position + 1], size);
+	}
+
+	return str;
+}
+
+float IP2Proxy_read_float(FILE *handle, uint32_t position)
+{
+	float ret = 0.0;
+	uint8_t *cache_shm = memory_pointer;
+	size_t temp;
+	
+#if defined(_SUN_) || defined(__powerpc__) || defined(__ppc__) || defined(__ppc64__) || defined(__powerpc64__)
+	char *p = (char *) &ret;
+	
+	// for SUN SPARC, have to reverse the byte order
+	if (lookup_mode == IP2PROXY_FILE_IO && handle != NULL) {
+		fseek(handle, position - 1, 0);
+		
+		temp = fread(p + 3, 1, 1, handle);
+		
+		if (temp == 0) {
+			return 0.0;
+		}
+
+		temp = fread(p + 2, 1, 1, handle);
+		
+		if (temp == 0) {
+			return 0.0;
+		}
+
+		temp = fread(p + 1, 1, 1, handle);
+		
+		if (temp == 0) {
+			return 0.0;
+		}
+
+		temp = fread(p, 1, 1, handle);
+		
+		if (temp == 0) {
+			return 0.0;
+		}
+	} else {
+		*(p+3) = cache_shm[position - 1];
+		*(p+2) = cache_shm[position];
+		*(p+1) = cache_shm[position + 1];
+		*(p) = cache_shm[position + 2];
+	}
+#else
+	if (lookup_mode == IP2PROXY_FILE_IO && handle != NULL) {
+		fseek(handle, position - 1, 0);
+		temp = fread(&ret, 4, 1, handle);
+		
+		if (temp == 0) {
+			return 0.0;
+		}
+	} else {
+		memcpy((void*) &ret, (void*)&cache_shm[position - 1], 4);
+	}
+#endif
+	return ret;
+}
