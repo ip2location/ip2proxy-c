@@ -8,4 +8,4 @@ include_HEADERS = IP2Proxy.h
 
 libIP2Proxy_la_SOURCES = IP2Proxy.c
 
-libIP2Proxy_la_LDFLAGS = -module -no-undefined -version-info 1:0:0 
+libIP2Proxy_la_LDFLAGS = -module -no-undefined -version-info 2:0:0 

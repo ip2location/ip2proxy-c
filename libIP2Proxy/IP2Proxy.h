@@ -54,9 +54,9 @@ extern "C" {
 #endif
 #endif
 
-#define API_VERSION			3.1.0
+#define API_VERSION			3.2.0
 #define API_VERSION_MAJOR	3
-#define API_VERSION_MINOR	1
+#define API_VERSION_MINOR	2
 #define API_VERSION_RELEASE	0
 #define API_VERSION_NUMERIC (((API_VERSION_MAJOR * 100) + API_VERSION_MINOR) * 100 + API_VERSION_RELEASE)
 
@@ -155,7 +155,6 @@ IP2ProxyRecord *IP2Proxy_get_usage_type(IP2Proxy *handler, char *ip);
 IP2ProxyRecord *IP2Proxy_is_proxy(IP2Proxy *handler, char *ip);
 
 uint32_t IP2Proxy_close(IP2Proxy *handler);
-void IP2Proxy_clear_memory();
 void IP2Proxy_free_record(IP2ProxyRecord *record);
 
 /* Private functions */
@@ -168,6 +167,7 @@ uint32_t IP2Proxy_read32(FILE *handle, uint32_t position);
 uint8_t IP2Proxy_read8(FILE *handle, uint32_t position);
 int32_t IP2Proxy_close_memory(FILE *file);
 void IP2Proxy_delete_shm();
+void IP2Proxy_DB_del_shm();
 void IP2Proxy_delete_shared_memory();
 void IP2Proxy_replace(char *target, const char *needle, const char *replacement);
 

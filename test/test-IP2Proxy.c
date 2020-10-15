@@ -56,7 +56,6 @@ int main ()
 
 	IP2Proxy_close(IP2ProxyObj);
 	IP2Proxy_free_record(record);
-	IP2Proxy_clear_memory();
 
 	return 1;
 }

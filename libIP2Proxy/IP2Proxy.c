@@ -203,8 +203,7 @@ void IP2Proxy_delete_shm()
 	IP2Proxy_delete_shared_memory();
 }
 
-// Clear memory object
-void IP2Proxy_clear_memory()
+void IP2Proxy_DB_del_shm()
 {
 	IP2Proxy_delete_shared_memory();
 }
