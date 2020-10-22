@@ -8,8 +8,7 @@ CCFLAGS = /nologo /D WIN32 /c /ML
 CLFLAGS = /nologo /NODEFAULTLIB:LIBCD /SUBSYSTEM:CONSOLE 
 
 HEADER_INCLUDE = /I libIP2Proxy
-IP2LOCATION_SOURCE = libIP2Proxy/IP2Proxy.c \
-										 libIP2Proxy/IP2Proxy_DB.c 
+IP2LOCATION_SOURCE = libIP2Proxy/IP2Proxy.c
 
 TEST_IP2LOCATION = test/test-IP2Proxy.c
 										 
