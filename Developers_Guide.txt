@@ -70,6 +70,3 @@ Call to IP2Proxy_close will not deleted the shared memory, it will only detach t
 When IP2Proxy_delete_shared_memory() function is called, and if any other process(es) is attached to shared memory, it will only delete the name of the shared memory but the other process(es) will continue to use memory and memory will be freed only after last attached process is detached from it.
 
 After calling IP2Proxy_delete_shared_memory(), the next call to IP2Proxy_set_lookup_mode() with IP2PROXY_SHARED_MEMORY option will result in a new shared memory and will not reuse the old one if one exists and used by any other process. Please refer shm_open and shm_unlink man pages for more info.
-
-
-Version 3.1.0  28/09/2020

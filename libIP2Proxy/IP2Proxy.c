@@ -43,17 +43,18 @@ typedef struct ip_container {
 	struct in6_addr ipv6;
 } ip_container;
 
-uint8_t IP2PROXY_COUNTRY_POSITION[11]		= {0,   2,   3,   3,   3,   3,   3,   3,   3,   3,   3};
-uint8_t IP2PROXY_REGION_POSITION[11]		= {0,   0,   0,   4,   4,   4,   4,   4,   4,   4,   4};
-uint8_t IP2PROXY_CITY_POSITION[11]			= {0,   0,   0,   5,   5,   5,   5,   5,   5,   5,   5};
-uint8_t IP2PROXY_ISP_POSITION[11]			= {0,   0,   0,   0,   6,   6,   6,   6,   6,   6,   6};
-uint8_t IP2PROXY_PROXY_TYPE_POSITION[11]	= {0,   0,   2,   2,   2,   2,   2,   2,   2,   2,   2};
-uint8_t IP2PROXY_DOMAIN_POSITION[11]		= {0,   0,   0,   0,   0,   7,   7,   7,   7,   7,   7};
-uint8_t IP2PROXY_USAGE_TYPE_POSITION[11]	= {0,   0,   0,   0,   0,   0,   8,   8,   8,   8,   8};
-uint8_t IP2PROXY_ASN_POSITION[11]			= {0,   0,   0,   0,   0,   0,   0,   9,   9,   9,   9};
-uint8_t IP2PROXY_AS_POSITION[11]			= {0,   0,   0,   0,   0,   0,   0,  10,  10,  10,  10};
-uint8_t IP2PROXY_LAST_SEEN_POSITION[11]		= {0,   0,   0,   0,   0,   0,   0,   0,  11,  11,  11};
-uint8_t IP2PROXY_THREAT_POSITION[11]		= {0,   0,   0,   0,   0,   0,   0,   0,   0,  12,  12};
+uint8_t IP2PROXY_PROXY_TYPE_POSITION[12]	= {0,   0,   2,   2,   2,   2,   2,   2,   2,   2,   2,   2};
+uint8_t IP2PROXY_COUNTRY_POSITION[12]		= {0,   2,   3,   3,   3,   3,   3,   3,   3,   3,   3,   3};
+uint8_t IP2PROXY_REGION_POSITION[12]		= {0,   0,   0,   4,   4,   4,   4,   4,   4,   4,   4,   4};
+uint8_t IP2PROXY_CITY_POSITION[12]			= {0,   0,   0,   5,   5,   5,   5,   5,   5,   5,   5,   5};
+uint8_t IP2PROXY_ISP_POSITION[12]			= {0,   0,   0,   0,   6,   6,   6,   6,   6,   6,   6,   6};
+uint8_t IP2PROXY_DOMAIN_POSITION[12]		= {0,   0,   0,   0,   0,   7,   7,   7,   7,   7,   7,   7};
+uint8_t IP2PROXY_USAGE_TYPE_POSITION[12]	= {0,   0,   0,   0,   0,   0,   8,   8,   8,   8,   8,   8};
+uint8_t IP2PROXY_ASN_POSITION[12]			= {0,   0,   0,   0,   0,   0,   0,   9,   9,   9,   9,   9};
+uint8_t IP2PROXY_AS_POSITION[12]			= {0,   0,   0,   0,   0,   0,   0,  10,  10,  10,  10,  10};
+uint8_t IP2PROXY_LAST_SEEN_POSITION[12]		= {0,   0,   0,   0,   0,   0,   0,   0,  11,  11,  11,  11};
+uint8_t IP2PROXY_THREAT_POSITION[12]		= {0,   0,   0,   0,   0,   0,   0,   0,   0,  12,  12,  12};
+uint8_t IP2PROXY_PROVIDER_POSITION[12]		= {0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  13};
 
 // Static variables
 static int32_t is_in_memory = 0;
@@ -93,6 +94,15 @@ IP2Proxy *IP2Proxy_open(char *bin)
 	handler->file = f;
 
 	IP2Proxy_initialize(handler);
+
+	if (handler->product_code == 2) {
+	} else {
+		if (handler->database_year <= 20 && handler->product_code == 0) {
+		} else {
+			printf(INVALID_BIN_DATABASE);
+			return NULL;
+		}
+	}
 
 	return handler;
 }
@@ -223,6 +233,9 @@ static int IP2Proxy_initialize(IP2Proxy *handler)
 	handler->ipv6_database_address = IP2Proxy_read32(handler->file, 18);
 	handler->ipv4_index_base_address = IP2Proxy_read32(handler->file, 22);
 	handler->ipv6_index_base_address = IP2Proxy_read32(handler->file, 26);
+	handler->product_code = IP2Proxy_read8(handler->file, 30);
+	handler->license_code = IP2Proxy_read8(handler->file, 31);
+	handler->database_size = IP2Proxy_read32(handler->file, 32);
 
 	return 0;
 }
@@ -366,6 +379,12 @@ IP2ProxyRecord *IP2Proxy_get_threat(IP2Proxy *handler, char *ip)
 	return IP2Proxy_get_record(handler, ip, THREAT);
 }
 
+// Get Provider
+IP2ProxyRecord *IP2Proxy_get_provider(IP2Proxy *handler, char *ip)
+{
+	return IP2Proxy_get_record(handler, ip, PROVIDER);
+}
+
 // Get all records of an IP address
 IP2ProxyRecord *IP2Proxy_get_all(IP2Proxy *handler, char *ip)
 {
@@ -389,6 +408,7 @@ static IP2ProxyRecord *IP2Proxy_bad_record(const char *message)
 	record->as_ = strdup(message);
 	record->last_seen = strdup(message);
 	record->threat = strdup(message);
+	record->provider = strdup(message);
 
 	return record;
 }
@@ -546,6 +566,16 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint32_t rowaddr,
 		}
 	}
 
+	if ((mode & PROVIDER) && (IP2PROXY_PROVIDER_POSITION[dbtype] != 0)) {
+		if (!record->provider) {
+			record->provider = IP2Proxy_read_string(handle, IP2Proxy_read32(handle, rowaddr + 4 * (IP2PROXY_PROVIDER_POSITION[dbtype]-1)));
+		}
+	} else {
+		if (!record->provider) {
+			record->provider = strdup(NOT_SUPPORTED);
+		}
+	}
+
 	return record;
 }
 
@@ -600,6 +630,7 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *handler, uint32_t mode
 		record->as_ = NOT_SUPPORTED;
 		record->last_seen = NOT_SUPPORTED;
 		record->threat = NOT_SUPPORTED;
+		record->provider = NOT_SUPPORTED;
 
 		while (fgets(line, 2048, handle) != NULL) {
 			IP2Proxy_replace(line, "\n", "");
@@ -634,6 +665,7 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *handler, uint32_t mode
 			record->as_ = "-";
 			record->last_seen = "-";
 			record->threat = "-";
+			record->provider = "-";
 
 			return record;
 		}
@@ -877,6 +909,10 @@ void IP2Proxy_free_record(IP2ProxyRecord *record)
 
 	if (record->threat != NULL) {
 		free(record->threat);
+	}
+
+	if (record->threat != NULL) {
+		free(record->provider);
 	}
 
 	free(record);

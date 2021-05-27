@@ -53,6 +53,7 @@ int main ()
 	fprintf(stdout, "AS: %s\n", record->as_);
 	fprintf(stdout, "Last Seen: %s\n", record->last_seen);
 	fprintf(stdout, "Threat: %s\n", record->threat);
+	fprintf(stdout, "Provider: %s\n", record->provider);
 
 	IP2Proxy_close(IP2ProxyObj);
 	IP2Proxy_free_record(record);

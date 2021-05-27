@@ -1,6 +1,6 @@
 /*
  * IP2Proxy C library is distributed under MIT license
- * Copyright (c) 2013-2020 IP2Location.com. support at ip2location dot com
+ * Copyright (c) 2013-2021 IP2Location.com. support at ip2location dot com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the MIT license
@@ -54,9 +54,9 @@ extern "C" {
 #endif
 #endif
 
-#define API_VERSION			3.2.0
-#define API_VERSION_MAJOR	3
-#define API_VERSION_MINOR	2
+#define API_VERSION			4.0.0
+#define API_VERSION_MAJOR	4
+#define API_VERSION_MINOR	0
 #define API_VERSION_RELEASE	0
 #define API_VERSION_NUMERIC (((API_VERSION_MAJOR * 100) + API_VERSION_MINOR) * 100 + API_VERSION_RELEASE)
 
@@ -78,12 +78,14 @@ extern "C" {
 #define AS				0x00400
 #define LASTSEEN		0x00800
 #define THREAT			0x01000
+#define PROVIDER		0x01200
 
 #define ALL	COUNTRYSHORT | COUNTRYLONG | REGION | CITY | ISP | ISPROXY | PROXYTYPE | DOMAINNAME | USAGETYPE | ASN | AS | LASTSEEN | THREAT
 
 #define INVALID_IP_ADDRESS					"INVALID IP ADDRESS"
 #define IPV6_ADDRESS_MISSING_IN_IPV4_BIN	"IPV6 ADDRESS MISSING IN IPV4 BIN"
 #define NOT_SUPPORTED						"NOT SUPPORTED"
+#define INVALID_BIN_DATABASE				"Incorrect IP2Proxy BIN file format. Please make sure that you are using the latest IP2Proxy BIN file."
 #define IP2PROXY_SHM						"/IP2Proxy_Shm"
 #define MAP_ADDR							4194500608
 
@@ -101,12 +103,15 @@ typedef struct {
 	uint8_t database_day;
 	uint8_t database_month;
 	uint8_t database_year;
+	uint8_t product_code;
+	uint8_t license_code;
 	uint32_t ipv4_database_count;
 	uint32_t ipv4_database_address;
 	uint32_t ipv4_index_base_address;
 	uint32_t ipv6_database_count;
 	uint32_t ipv6_database_address;
 	uint32_t ipv6_index_base_address;
+	uint32_t database_size;
 } IP2Proxy;
 
 typedef struct {
@@ -123,6 +128,7 @@ typedef struct {
 	char *as_;
 	char *last_seen;
 	char *threat;
+	char *provider;
 } IP2ProxyRecord;
 
 /* Public functions */
@@ -153,6 +159,7 @@ IP2ProxyRecord *IP2Proxy_get_region(IP2Proxy *handler, char *ip);
 IP2ProxyRecord *IP2Proxy_get_threat(IP2Proxy *handler, char *ip);
 IP2ProxyRecord *IP2Proxy_get_usage_type(IP2Proxy *handler, char *ip);
 IP2ProxyRecord *IP2Proxy_is_proxy(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_provider(IP2Proxy *handler, char *ip);
 
 uint32_t IP2Proxy_close(IP2Proxy *handler);
 void IP2Proxy_free_record(IP2ProxyRecord *record);
