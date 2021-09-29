@@ -63,6 +63,7 @@ Below are the methods supported in this library.
 | IP2Proxy_get_as                                      | Return autonomous system (AS) name.                          |
 | IP2Proxy_get_last_seen                               | Return proxy last seen in days.                              |
 | IP2Proxy_get_threat                                  | Return security threat reported.                             |
+| IP2Proxy_get_provider                                | Return name of VPN provider if available.                    |
 
 
 
@@ -79,7 +80,7 @@ Open and read IP2Proxy binary database. There are 3 modes:
 
 
 
-##Support
+## Support
 
 Email: support@ip2location.com.  
 URL: [https://www.ip2location.com](https://www.ip2location.com)

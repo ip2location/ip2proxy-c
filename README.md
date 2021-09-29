@@ -80,7 +80,7 @@ Open and read IP2Proxy binary database. There are 3 modes:
 
 
 
-##Support
+## Support
 
 Email: support@ip2location.com.  
 URL: [https://www.ip2location.com](https://www.ip2location.com)
