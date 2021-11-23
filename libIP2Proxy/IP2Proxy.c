@@ -1056,7 +1056,7 @@ int32_t IP2Proxy_set_shared_memory(FILE *file)
 // Load BIN file into memory
 int32_t IP2Proxy_load_database_into_memory(FILE *file, void *memory, int64_t size)
 {
-	fseek(file, SEEK_SET, 0);
+	fseek(file, 0, SEEK_SET);
 	
 	if (fread(memory, size, 1, file) != 1) {
 		return -1;
@@ -1216,7 +1216,7 @@ uint32_t IP2Proxy_read32(FILE *handle, uint32_t position)
 	
 	// Read from file
 	if (lookup_mode == IP2PROXY_FILE_IO && handle != NULL) {
-		fseek(handle, position - 1, 0);
+		fseek(handle, position - 1, SEEK_SET);
 		temp = fread(&byte1, 1, 1, handle);
 
 		if (temp == 0) {
@@ -1257,7 +1257,7 @@ uint8_t IP2Proxy_read8(FILE *handle, uint32_t position)
 	size_t temp;
 
 	if (lookup_mode == IP2PROXY_FILE_IO && handle != NULL) {
-		fseek(handle, position - 1, 0);
+		fseek(handle, position - 1, SEEK_SET);
 		temp = fread(&ret, 1, 1, handle);
 		
 		if (temp == 0) {
@@ -1315,7 +1315,7 @@ float IP2Proxy_read_float(FILE *handle, uint32_t position)
 	
 	// for SUN SPARC, have to reverse the byte order
 	if (lookup_mode == IP2PROXY_FILE_IO && handle != NULL) {
-		fseek(handle, position - 1, 0);
+		fseek(handle, position - 1, SEEK_SET);
 		
 		temp = fread(p + 3, 1, 1, handle);
 		
@@ -1348,7 +1348,7 @@ float IP2Proxy_read_float(FILE *handle, uint32_t position)
 	}
 #else
 	if (lookup_mode == IP2PROXY_FILE_IO && handle != NULL) {
-		fseek(handle, position - 1, 0);
+		fseek(handle, position - 1, SEEK_SET);
 		temp = fread(&ret, 4, 1, handle);
 		
 		if (temp == 0) {
