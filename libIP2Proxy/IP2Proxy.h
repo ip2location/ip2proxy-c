@@ -1,6 +1,6 @@
 /*
  * IP2Proxy C library is distributed under MIT license
- * Copyright (c) 2013-2021 IP2Location.com. support at ip2location dot com
+ * Copyright (c) 2013-2022 IP2Location.com. support at ip2location dot com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the MIT license
@@ -54,10 +54,10 @@ extern "C" {
 #endif
 #endif
 
-#define API_VERSION			4.0.1
+#define API_VERSION			4.1.0
 #define API_VERSION_MAJOR	4
-#define API_VERSION_MINOR	0
-#define API_VERSION_RELEASE	1
+#define API_VERSION_MINOR	1
+#define API_VERSION_RELEASE	0
 #define API_VERSION_NUMERIC (((API_VERSION_MAJOR * 100) + API_VERSION_MINOR) * 100 + API_VERSION_RELEASE)
 
 #define MAX_IPV4_RANGE	4294967295U
@@ -167,10 +167,13 @@ void IP2Proxy_free_record(IP2ProxyRecord *record);
 /* Private functions */
 char *IP2Proxy_read_string(FILE *handle, uint32_t position);
 float IP2Proxy_read_float(FILE *handle, uint32_t position);
+float IP2Proxy_read_float_row(uint8_t* buffer, uint32_t position);
 int32_t IP2Proxy_set_memory_cache(FILE *filehandle);
 int32_t IP2Proxy_set_shared_memory(FILE *filehandle);
 struct in6_addr IP2Proxy_read_ipv6_address(FILE *handle, uint32_t position);
+struct in6_addr IP2Proxy_read128_row(uint8_t* buffer, uint32_t position);
 uint32_t IP2Proxy_read32(FILE *handle, uint32_t position);
+uint32_t IP2Proxy_read32_row(uint8_t* buffer, uint32_t position);
 uint8_t IP2Proxy_read8(FILE *handle, uint32_t position);
 int32_t IP2Proxy_close_memory(FILE *file);
 void IP2Proxy_delete_shm();
