@@ -222,24 +222,27 @@ void IP2Proxy_DB_del_shm()
 static int IP2Proxy_initialize(IP2Proxy *handler)
 {
 	uint8_t buffer[64];
-
-	fread(buffer, sizeof(buffer), 1, handler->file);
-
-	handler->database_type = buffer[0];
-	handler->database_column = buffer[1];
-	handler->database_year = buffer[2];
-	handler->database_month = buffer[3];
-	handler->database_day = buffer[4];
+	uint32_t mem_offset = 1;
 	
-	handler->ipv4_database_count = IP2Proxy_read32_row((uint8_t*)buffer, 5);
-	handler->ipv4_database_address = IP2Proxy_read32_row((uint8_t*)buffer, 9);
-	handler->ipv6_database_count = IP2Proxy_read32_row((uint8_t*)buffer, 13);
-	handler->ipv6_database_address = IP2Proxy_read32_row((uint8_t*)buffer, 17);
-	handler->ipv4_index_base_address = IP2Proxy_read32_row((uint8_t*)buffer, 21);
-	handler->ipv6_index_base_address = IP2Proxy_read32_row((uint8_t*)buffer, 25);
-	handler->product_code = buffer[29];
-	handler->license_code = buffer[30];
-	handler->database_size = IP2Proxy_read32_row((uint8_t*)buffer, 31);
+	if (lookup_mode == IP2PROXY_FILE_IO) {
+		fread(buffer, sizeof(buffer), 1, handler->file);
+	}
+
+	handler->database_type = IP2Proxy_read8_row((uint8_t*)buffer, 0, mem_offset);
+	handler->database_column = IP2Proxy_read8_row((uint8_t*)buffer, 1, mem_offset);
+	handler->database_year = IP2Proxy_read8_row((uint8_t*)buffer, 2, mem_offset);
+	handler->database_month = IP2Proxy_read8_row((uint8_t*)buffer, 3, mem_offset);
+	handler->database_day = IP2Proxy_read8_row((uint8_t*)buffer, 4, mem_offset);
+	
+	handler->ipv4_database_count = IP2Proxy_read32_row((uint8_t*)buffer, 5, mem_offset);
+	handler->ipv4_database_address = IP2Proxy_read32_row((uint8_t*)buffer, 9, mem_offset);
+	handler->ipv6_database_count = IP2Proxy_read32_row((uint8_t*)buffer, 13, mem_offset);
+	handler->ipv6_database_address = IP2Proxy_read32_row((uint8_t*)buffer, 17, mem_offset);
+	handler->ipv4_index_base_address = IP2Proxy_read32_row((uint8_t*)buffer, 21, mem_offset);
+	handler->ipv6_index_base_address = IP2Proxy_read32_row((uint8_t*)buffer, 25, mem_offset);
+	handler->product_code = IP2Proxy_read8_row((uint8_t*)buffer, 29, mem_offset);
+	handler->license_code = IP2Proxy_read8_row((uint8_t*)buffer, 30, mem_offset);
+	handler->database_size = IP2Proxy_read32_row((uint8_t*)buffer, 31, mem_offset);
 
 	return 0;
 }
@@ -417,9 +420,8 @@ static IP2ProxyRecord *IP2Proxy_bad_record(const char *message)
 	return record;
 }
 
-
 // read the record data
-static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, uint32_t mode)
+static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, uint32_t mode, uint32_t mem_offset)
 {
 	uint8_t dbtype = handler->database_type;
 	FILE *handle = handler->file;
@@ -428,14 +430,14 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & ISPROXY) && (IP2PROXY_COUNTRY_POSITION[dbtype] != 0)) {
 		if (!record->country_short) {
-			record->country_short = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_COUNTRY_POSITION[dbtype] - 2)));
+			record->country_short = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_COUNTRY_POSITION[dbtype] - 2), mem_offset));
 		}
 
 		if (strcmp(record->country_short, "-") == 0) {
 			record->is_proxy = "0";
 		} else {
 			if (!record->proxy_type) {
-				record->proxy_type = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_COUNTRY_POSITION[dbtype] - 2)));
+				record->proxy_type = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_COUNTRY_POSITION[dbtype] - 2), mem_offset));
 			}
 
 			if (strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0) {
@@ -454,7 +456,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & COUNTRYSHORT) && (IP2PROXY_COUNTRY_POSITION[dbtype] != 0)) {
 		if (!record->country_short) {
-			record->country_short = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_COUNTRY_POSITION[dbtype] - 2)));
+			record->country_short = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_COUNTRY_POSITION[dbtype] - 2), mem_offset));
 		}
 	} else {
 		if (!record->country_short) {
@@ -464,7 +466,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & COUNTRYLONG) && (IP2PROXY_COUNTRY_POSITION[dbtype] != 0)) {
 		if (!record->country_long) {
-			record->country_long = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_COUNTRY_POSITION[dbtype] - 2))+3);
+			record->country_long = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_COUNTRY_POSITION[dbtype] - 2), mem_offset)+3);
 		}
 	} else {
 		if (!record->country_long) {
@@ -474,7 +476,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & REGION) && (IP2PROXY_REGION_POSITION[dbtype] != 0)) {
 		if (!record->region) {
-			record->region = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_REGION_POSITION[dbtype] - 2)));
+			record->region = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_REGION_POSITION[dbtype] - 2), mem_offset));
 		}
 	} else {
 		if (!record->region)
@@ -483,7 +485,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & CITY) && (IP2PROXY_CITY_POSITION[dbtype] != 0)) {
 		if (!record->city) {
-			record->city = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_CITY_POSITION[dbtype] - 2)));
+			record->city = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_CITY_POSITION[dbtype] - 2), mem_offset));
 		}
 	} else {
 		if (!record->city) {
@@ -493,7 +495,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & ISP) && (IP2PROXY_ISP_POSITION[dbtype] != 0)) {
 		if (!record->isp) {
-			record->isp = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_ISP_POSITION[dbtype] - 2)));
+			record->isp = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_ISP_POSITION[dbtype] - 2), mem_offset));
 		}
 	} else {
 		if (!record->isp) {
@@ -503,7 +505,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & PROXYTYPE) && (IP2PROXY_PROXY_TYPE_POSITION[dbtype] != 0)) {
 		if (!record->proxy_type)
-			record->proxy_type = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_PROXY_TYPE_POSITION[dbtype] - 2)));
+			record->proxy_type = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_PROXY_TYPE_POSITION[dbtype] - 2), mem_offset));
 	} else {
 		if (!record->proxy_type) {
 			record->proxy_type = strdup(NOT_SUPPORTED);
@@ -512,7 +514,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & DOMAINNAME) && (IP2PROXY_DOMAIN_POSITION[dbtype] != 0)) {
 		if (!record->domain) {
-			record->domain = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_DOMAIN_POSITION[dbtype] - 2)));
+			record->domain = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_DOMAIN_POSITION[dbtype] - 2), mem_offset));
 		}
 	} else {
 		if (!record->domain) {
@@ -522,7 +524,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & USAGETYPE) && (IP2PROXY_USAGE_TYPE_POSITION[dbtype] != 0)) {
 		if (!record->usage_type) {
-			record->usage_type = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_USAGE_TYPE_POSITION[dbtype] - 2)));
+			record->usage_type = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_USAGE_TYPE_POSITION[dbtype] - 2), mem_offset));
 		}
 	} else {
 		if (!record->usage_type) {
@@ -532,7 +534,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & ASN) && (IP2PROXY_ASN_POSITION[dbtype] != 0)) {
 		if (!record->asn) {
-			record->asn = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_ASN_POSITION[dbtype] - 2)));
+			record->asn = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_ASN_POSITION[dbtype] - 2), mem_offset));
 		}
 	} else {
 		if (!record->asn) {
@@ -542,7 +544,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & AS) && (IP2PROXY_AS_POSITION[dbtype] != 0)) {
 		if (!record->as_) {
-			record->as_ = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_AS_POSITION[dbtype] - 2)));
+			record->as_ = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_AS_POSITION[dbtype] - 2), mem_offset));
 		}
 	} else {
 		if (!record->as_) {
@@ -552,7 +554,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & LASTSEEN) && (IP2PROXY_LAST_SEEN_POSITION[dbtype] != 0)) {
 		if (!record->last_seen) {
-			record->last_seen = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_LAST_SEEN_POSITION[dbtype] - 2)));
+			record->last_seen = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_LAST_SEEN_POSITION[dbtype] - 2), mem_offset));
 		}
 	} else {
 		if (!record->last_seen) {
@@ -562,7 +564,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & THREAT) && (IP2PROXY_THREAT_POSITION[dbtype] != 0)) {
 		if (!record->threat) {
-			record->threat = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_THREAT_POSITION[dbtype] - 2)));
+			record->threat = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_THREAT_POSITION[dbtype] - 2), mem_offset));
 		}
 	} else {
 		if (!record->threat) {
@@ -572,7 +574,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 
 	if ((mode & PROVIDER) && (IP2PROXY_PROVIDER_POSITION[dbtype] != 0)) {
 		if (!record->provider) {
-			record->provider = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_PROVIDER_POSITION[dbtype] - 2)));
+			record->provider = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_PROVIDER_POSITION[dbtype] - 2), mem_offset));
 		}
 	} else {
 		if (!record->provider) {
@@ -784,17 +786,20 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *handler, uint32_t mode
 	uint8_t row_buffer[200];
 	uint32_t full_row_size;
 	uint32_t row_size;
+	uint32_t mem_offset;
 
 	if (ipv4_index_base_address > 0) {
 		uint32_t number = (uint32_t) ip_number >> 16;
-		uint32_t index = ipv4_index_base_address + (number << 3);
-
+		uint32_t indexpos = ipv4_index_base_address + (number << 3);
+		
 		uint8_t indexbuffer[8];
-		fseek(handle, index - 1, 0);
-		fread(indexbuffer, sizeof(indexbuffer), 1, handle);
-
-		low = IP2Proxy_read32_row((uint8_t*)indexbuffer, 0);
-		high = IP2Proxy_read32_row((uint8_t*)indexbuffer, 4);
+		if (lookup_mode == IP2PROXY_FILE_IO) {
+			fseek(handle, indexpos - 1, 0);
+			fread(indexbuffer, sizeof(indexbuffer), 1, handle);
+		}
+		mem_offset = indexpos;
+		low = IP2Proxy_read32_row((uint8_t*)indexbuffer, 0, mem_offset);
+		high = IP2Proxy_read32_row((uint8_t*)indexbuffer, 4, mem_offset);
 	}
 
 	full_row_size = column_offset + 4;
@@ -803,15 +808,21 @@ static IP2ProxyRecord *IP2Proxy_get_ipv4_record(IP2Proxy *handler, uint32_t mode
 	while (low <= high) {
 		mid = (uint32_t)((low + high) >> 1);
 		row_offset = base_address + (mid * column_offset);
-		fseek(handle, row_offset - 1, 0);
-		fread(&full_row_buffer, full_row_size, 1, handle);
-
-		ip_from = IP2Proxy_read32_row((uint8_t *)full_row_buffer, 0);
-		ip_to = IP2Proxy_read32_row((uint8_t *)full_row_buffer, column_offset);
+		
+		if (lookup_mode == IP2PROXY_FILE_IO) {
+			fseek(handle, row_offset - 1, 0);
+			fread(&full_row_buffer, full_row_size, 1, handle);
+		}
+		mem_offset = row_offset;
+		
+		ip_from = IP2Proxy_read32_row((uint8_t*)full_row_buffer, 0, mem_offset);
+		ip_to = IP2Proxy_read32_row((uint8_t*)full_row_buffer, column_offset, mem_offset);
 
 		if ((ip_number >= ip_from) && (ip_number < ip_to)) {
-			memcpy(&row_buffer, ((uint8_t*)full_row_buffer) + 4, row_size); // extract actual row data
-			return IP2Proxy_read_record(handler, (uint8_t *)row_buffer, mode);
+			if (lookup_mode == IP2PROXY_FILE_IO) {
+				memcpy(&row_buffer, ((uint8_t*)full_row_buffer) + 4, row_size); // extract actual row data
+			}
+			return IP2Proxy_read_record(handler, (uint8_t *)row_buffer, mode, mem_offset + 4);
 		} else {
 			if (ip_number < ip_from) {
 				high = mid - 1;
@@ -845,6 +856,7 @@ static IP2ProxyRecord * IP2Proxy_get_ipv6_record(IP2Proxy *handler, uint32_t mod
 	uint8_t row_buffer[200];
 	uint32_t full_row_size;
 	uint32_t row_size;
+	uint32_t mem_offset;
 
 	ip_number = parsed_ip.ipv6;
 
@@ -854,14 +866,16 @@ static IP2ProxyRecord * IP2Proxy_get_ipv6_record(IP2Proxy *handler, uint32_t mod
 
 	if (ipv6_index_base_address > 0) {
 		uint32_t number = (ip_number.s6_addr[0] * 256) + ip_number.s6_addr[1];
-		uint32_t index = ipv6_index_base_address + (number << 3);
-
+		uint32_t indexpos = ipv6_index_base_address + (number << 3);
+		
 		uint8_t indexbuffer[8];
-		fseek(handle, index - 1, 0);
-		fread(indexbuffer, sizeof(indexbuffer), 1, handle);
-
-		low = IP2Proxy_read32_row((uint8_t*)indexbuffer, 0);
-		high = IP2Proxy_read32_row((uint8_t*)indexbuffer, 4);
+		if (lookup_mode == IP2PROXY_FILE_IO) {
+			fseek(handle, indexpos - 1, 0);
+			fread(indexbuffer, sizeof(indexbuffer), 1, handle);
+		}
+		mem_offset = indexpos;
+		low = IP2Proxy_read32_row((uint8_t*)indexbuffer, 0, mem_offset);
+		high = IP2Proxy_read32_row((uint8_t*)indexbuffer, 4, mem_offset);
 	}
 
 	full_row_size = column_offset + 16;
@@ -870,15 +884,21 @@ static IP2ProxyRecord * IP2Proxy_get_ipv6_record(IP2Proxy *handler, uint32_t mod
 	while (low <= high) {
 		mid = (uint32_t)((low + high) >> 1);
 		row_offset = base_address + (mid * column_offset);
-		fseek(handle, row_offset - 1, 0);
-		fread(&full_row_buffer, full_row_size, 1, handle);
-
-		ip_from = IP2Proxy_read128_row((uint8_t *)full_row_buffer, 0);
-		ip_to = IP2Proxy_read128_row((uint8_t *)full_row_buffer, column_offset);
+		
+		if (lookup_mode == IP2PROXY_FILE_IO) {
+			fseek(handle, row_offset - 1, 0);
+			fread(&full_row_buffer, full_row_size, 1, handle);
+		}
+		mem_offset = row_offset;
+		
+		ip_from = IP2Proxy_read128_row((uint8_t *)full_row_buffer, 0, mem_offset);
+		ip_to = IP2Proxy_read128_row((uint8_t *)full_row_buffer, column_offset, mem_offset);
 
 		if ((IP2Proxy_ipv6_compare(&ip_number, &ip_from) >= 0) && (IP2Proxy_ipv6_compare(&ip_number, &ip_to) < 0)) {
-			memcpy(&row_buffer, ((uint8_t*)full_row_buffer) + 16, row_size); // extract actual row data
-			return IP2Proxy_read_record(handler, (uint8_t *)row_buffer, mode);
+			if (lookup_mode == IP2PROXY_FILE_IO) {
+				memcpy(&row_buffer, ((uint8_t*)full_row_buffer) + 16, row_size); // extract actual row data
+			}
+			return IP2Proxy_read_record(handler, (uint8_t *)row_buffer, mode, mem_offset + 16);
 		} else {
 			if (IP2Proxy_ipv6_compare(&ip_number, &ip_from) < 0) {
 				high = mid - 1;
@@ -1235,13 +1255,13 @@ void IP2Proxy_replace(char *target, const char *needle, const char *replacement)
 	strcpy(target, buffer);
 }
 
-struct in6_addr IP2Proxy_read128_row(uint8_t* buffer, uint32_t position)
+struct in6_addr IP2Proxy_read128_row(uint8_t* buffer, uint32_t position, uint32_t mem_offset)
 {
 	int i, j;
 	struct in6_addr addr6;
 	for (i = 0, j = 15; i < 16; i++, j--)
 	{
-		addr6.s6_addr[i] = buffer[position + j];
+		addr6.s6_addr[i] = IP2Proxy_read8_row(buffer, position + j, mem_offset);
 	}
 	return addr6;
 }
@@ -1303,7 +1323,7 @@ uint32_t IP2Proxy_read32(FILE *handle, uint32_t position)
 	return ((byte4 << 24) | (byte3 << 16) | (byte2 << 8) | (byte1));
 }
 
-uint32_t IP2Proxy_read32_row(uint8_t* buffer, uint32_t position)
+uint32_t IP2Proxy_read32_row(uint8_t* buffer, uint32_t position, uint32_t mem_offset)
 {
 	uint32_t val = 0;
 	uint8_t byte1 = 0;
@@ -1316,10 +1336,10 @@ uint32_t IP2Proxy_read32_row(uint8_t* buffer, uint32_t position)
 		memcpy(&val, buffer + position, 4);
 		return val;
 	} else {
-		byte1 = cache_shm[position - 1];
-		byte2 = cache_shm[position];
-		byte3 = cache_shm[position + 1];
-		byte4 = cache_shm[position + 2];
+		byte1 = cache_shm[mem_offset + position - 1];
+		byte2 = cache_shm[mem_offset + position];
+		byte3 = cache_shm[mem_offset + position + 1];
+		byte4 = cache_shm[mem_offset + position + 2];
 		return ((byte4 << 24) | (byte3 << 16) | (byte2 << 8) | (byte1));
 	}
 }
@@ -1342,6 +1362,17 @@ uint8_t IP2Proxy_read8(FILE *handle, uint32_t position)
 	}
 
 	return ret;
+}
+
+uint8_t IP2Proxy_read8_row(uint8_t* buffer, uint32_t position, uint32_t mem_offset)
+{
+	uint8_t *cache_shm = memory_pointer;
+
+	if (lookup_mode == IP2PROXY_FILE_IO) {
+		return buffer[position];
+	} else {
+		return cache_shm[mem_offset + position - 1];
+	}
 }
 
 char *IP2Proxy_read_string(FILE *handle, uint32_t position)
@@ -1424,7 +1455,7 @@ float IP2Proxy_read_float(FILE *handle, uint32_t position)
 	return ret;
 }
 
-float IP2Proxy_read_float_row(uint8_t* buffer, uint32_t position)
+float IP2Proxy_read_float_row(uint8_t* buffer, uint32_t position, uint32_t mem_offset)
 {
 	float ret = 0.0;
 	uint8_t stuff[4];
@@ -1443,17 +1474,17 @@ float IP2Proxy_read_float_row(uint8_t* buffer, uint32_t position)
 		stuff[3] = temp[0];
 		memcpy(&ret, &stuff, 4);
 	} else {
-		*(p+3) = cache_shm[position - 1];
-		*(p+2) = cache_shm[position];
-		*(p+1) = cache_shm[position + 1];
-		*(p) = cache_shm[position + 2];
+		*(p+3) = cache_shm[mem_offset + position - 1];
+		*(p+2) = cache_shm[mem_offset + position];
+		*(p+1) = cache_shm[mem_offset + position + 1];
+		*(p) = cache_shm[mem_offset + position + 2];
 	}
 #else
 	if (lookup_mode == IP2PROXY_FILE_IO) {
 		memcpy(&stuff, buffer + position, 4);
 		memcpy(&ret, &stuff, 4);
 	} else {
-		memcpy((void*) &ret, (void*)&cache_shm[position - 1], 4);
+		memcpy((void*) &ret, (void*)&cache_shm[mem_offset + position - 1], 4);
 	}
 #endif
 	return ret;
