@@ -437,7 +437,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 			record->is_proxy = "0";
 		} else {
 			if (!record->proxy_type) {
-				record->proxy_type = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_COUNTRY_POSITION[dbtype] - 2), mem_offset));
+				record->proxy_type = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_PROXY_TYPE_POSITION[dbtype] - 2), mem_offset));
 			}
 
 			if (strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0) {
