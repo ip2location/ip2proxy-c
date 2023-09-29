@@ -1,4 +1,4 @@
-# IP2Proxy PHP API
+# IP2Proxy C API
 
 ## Database Class
 ```{py:function} IP2Proxy_open(database_file_path)
