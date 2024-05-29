@@ -23,6 +23,22 @@ This library can be compiled and installed in different platform. Please refer t
     make
 ```
 
+###  Debian
+
+```bash
+curl -LO https://github.com/ip2location/ip2proxy-c/releases/download/4.1.2/ip2proxy-4.1.2.deb
+sudo dpkg -i ip2proxy-4.1.2.deb
+```
+
+
+###  Ubuntu
+
+```bash
+sudo add-apt-repository ppa:ip2location/ip2proxy
+sudo apt update
+sudo apt install ip2proxy
+```
+
 ### Windows
 ```bash
     Execute "vcvarsall.bat". (This file is part of Microsoft Visual C, not ip2location code) 
