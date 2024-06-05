@@ -12,10 +12,20 @@ static void print_usage(const char *argv0)
 "	-d, --data-file\n"
 "		Specify the path of IP2Proxy BIN data file.\n"
 "\n"
-"   -e, --field\n"
+"	-e, --field\n"
 "		Output the field data.\n"
 "		Field name includes:\n"
-"			country_code	 \n"
+"			is_proxy\n"
+"			Check wether if an IP address was a proxy.\n"
+"			* -1 - Error\n"
+"			*  0 - Not a proxy\n"
+"			*  1 - Is a proxy\n"
+"			*  2 - A data center IP address\n"
+"\n"
+"			proxy_type\n"
+"			Proxy type.\n"
+"\n"
+"			country_code\n"
 "			Two-character country code based on ISO 3166.\n"
 "\n"
 "			country_name\n"
@@ -136,6 +146,7 @@ static void print_header(FILE *fout, const char *field, const char *format)
 		}
 
 		WRITE_HEADER("ip");
+		WRITE_HEADER("is_proxy");
 		WRITE_HEADER("proxy_type");
 		WRITE_HEADER("country_code");
 		WRITE_HEADER("country_name");
@@ -217,6 +228,7 @@ static void print_record(FILE *fout, const char *field, IP2ProxyRecord *record, 
 		}
 
 		WRITE_FIELD("ip", ip);
+		WRITE_FIELD("is_proxy", record->is_proxy);
 		WRITE_FIELD("proxy_type", record->proxy_type);
 		WRITE_FIELD("country_code", record->country_short);
 		WRITE_FIELD("country_name", record->country_long);
@@ -260,7 +272,7 @@ int main(int argc, char *argv[])
 	IP2ProxyRecord *record = NULL;
 	FILE *fout = stdout;
 
-	field = "ip,proxy_type,country_code,country_name,region_name,city_name,isp,domain,as_number,as_name,last_seen,threat,provider";
+	field = "ip,is_proxy,proxy_type,country_code,country_name,region_name,city_name,isp,domain,as_number,as_name,last_seen,threat,provider";
 
 	for (i = 1; i < argc; i++) {
 		const char *argvi = argv[i];
