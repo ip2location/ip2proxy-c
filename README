@@ -17,12 +17,12 @@ For more details, please visit:
     make
 
 ### Windows
-    Execute "vcvarsall.bat". (This file is part of Microsoft Visual C, not ip2location code) 
+    Execute "vcvarsall.bat". (This file is part of Microsoft Visual C, not ip2location code)
     nmake -f Makefile.win
 
 ### MacOS
     autoreconf -i -v --force
-    export CFLAGS=-I/usr/include/malloc 
+    export CFLAGS=-I/usr/include/malloc
     ./configure
     make
 
@@ -33,7 +33,7 @@ For more details, please visit:
 
 ## Sample BIN Databases
 
-* Download free IP2Proxy LITE databases at [https://lite.ip2location.com](https://lite.ip2location.com)  
+* Download free IP2Proxy LITE databases at [https://lite.ip2location.com](https://lite.ip2location.com)
 * Download IP2Proxy sample databases at [https://www.ip2location.com/ip2proxy/developers](https://www.ip2location.com/ip2proxy/developers)
 
 ## Methods
@@ -64,6 +64,7 @@ Below are the methods supported in this library.
 | IP2Proxy_get_last_seen                               | Return proxy last seen in days.                              |
 | IP2Proxy_get_threat                                  | Return security threat reported.                             |
 | IP2Proxy_get_provider                                | Return name of VPN provider if available.                    |
+| IP2Proxy_get_fraud_score                             | Return the potential risk score.                             |
 
 
 
@@ -73,8 +74,8 @@ Open and read IP2Proxy binary database. There are 3 modes:
 
 1. IP2Proxy_open("SAMPLE.BIN") - File I/O reading. Slower look, but low resource consuming.
 2. IP2Proxy_open_csv("SAMPLE.CSV") - CSV parsing. Slowest, but convenient to use.
-3. IP2Proxy_set_lookup_mode(IP2ProxyObj, IP2PROXY_SHARED_MEMORY) - Stores whole IP2Proxy database into system memory. Lookup is possible across all applications within the system.  Extremely resources 
-   consuming. Do not use this mode if your system do not have enough 
+3. IP2Proxy_set_lookup_mode(IP2ProxyObj, IP2PROXY_SHARED_MEMORY) - Stores whole IP2Proxy database into system memory. Lookup is possible across all applications within the system.  Extremely resources
+   consuming. Do not use this mode if your system do not have enough
    memory.
 4. IP2Proxy_set_lookup_mode(IP2ProxyObj, IP2PROXY_CACHE_MEMORY) - Caches database into memory for faster lookup. Required high memory.
 
@@ -82,5 +83,5 @@ Open and read IP2Proxy binary database. There are 3 modes:
 
 ## Support
 
-Email: support@ip2location.com.  
+Email: support@ip2location.com.
 URL: [https://www.ip2location.com](https://www.ip2location.com)

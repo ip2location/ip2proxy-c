@@ -1,6 +1,6 @@
 /*
  * IP2Proxy C library is distributed under MIT license
- * Copyright (c) 2013-2024 IP2Location.com. support at ip2location dot com
+ * Copyright (c) 2013-2025 IP2Location.com. support at ip2location dot com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the MIT license
@@ -54,10 +54,10 @@ extern "C" {
 #endif
 #endif
 
-#define API_VERSION			4.1.2
+#define API_VERSION			4.2.0
 #define API_VERSION_MAJOR	4
-#define API_VERSION_MINOR	1
-#define API_VERSION_RELEASE	2
+#define API_VERSION_MINOR	2
+#define API_VERSION_RELEASE	0
 #define API_VERSION_NUMERIC (((API_VERSION_MAJOR * 100) + API_VERSION_MINOR) * 100 + API_VERSION_RELEASE)
 
 #define MAX_IPV4_RANGE	4294967295U
@@ -79,8 +79,8 @@ extern "C" {
 #define LASTSEEN		0x00800
 #define THREAT			0x01000
 #define PROVIDER		0x01200
-
-#define ALL	COUNTRYSHORT | COUNTRYLONG | REGION | CITY | ISP | ISPROXY | PROXYTYPE | DOMAINNAME | USAGETYPE | ASN | AS | LASTSEEN | THREAT
+#define FRAUDSCORE		0x01300
+#define ALL				COUNTRYSHORT | COUNTRYLONG | REGION | CITY | ISP | ISPROXY | PROXYTYPE | DOMAINNAME | USAGETYPE | ASN | AS | LASTSEEN | THREAT | PROVIDER | FRAUDSCORE
 
 #define INVALID_IP_ADDRESS					"INVALID IP ADDRESS"
 #define IPV6_ADDRESS_MISSING_IN_IPV4_BIN	"IPV6 ADDRESS MISSING IN IPV4 BIN"
@@ -129,6 +129,7 @@ typedef struct {
 	char *last_seen;
 	char *threat;
 	char *provider;
+	char *fraud_score;
 } IP2ProxyRecord;
 
 /* Public functions */
@@ -160,6 +161,7 @@ IP2ProxyRecord *IP2Proxy_get_threat(IP2Proxy *handler, char *ip);
 IP2ProxyRecord *IP2Proxy_get_usage_type(IP2Proxy *handler, char *ip);
 IP2ProxyRecord *IP2Proxy_is_proxy(IP2Proxy *handler, char *ip);
 IP2ProxyRecord *IP2Proxy_get_provider(IP2Proxy *handler, char *ip);
+IP2ProxyRecord *IP2Proxy_get_fraud_score(IP2Proxy *handler, char *ip);
 
 uint32_t IP2Proxy_close(IP2Proxy *handler);
 void IP2Proxy_free_record(IP2ProxyRecord *record);

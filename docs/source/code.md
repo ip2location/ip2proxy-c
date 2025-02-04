@@ -53,4 +53,5 @@ Retrieve geolocation information for an IP address.
 | is_proxy         |     Determine whether if an IP address was a proxy or not. |
 | proxy_type       |     Type of proxy. |
 | provider         |     Name of VPN provider if available. |
+| fraud_score      |     Potential risk score (0 - 99) associated with IP address. |
 ```

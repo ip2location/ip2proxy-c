@@ -76,6 +76,9 @@ static void print_usage(const char *argv0)
 "			provider\n"
 "			Name of VPN provider if available.\n"
 "\n"
+"			fraud_score\n"
+"			Potential risk score (0 - 99) associated with IP address.\n"
+"\n"
 "	-f, --format\n"
 "	Output format. Supported format:\n"
 "		- csv (default)\n"
@@ -103,7 +106,7 @@ static void print_usage(const char *argv0)
 
 static void print_version()
 {
-	printf("IP2Proxy version 4.1.2\n");
+	printf("IP2Proxy version 4.2.0\n");
 }
 
 static void print_footer(FILE *fout, const char *field, const char *format)
@@ -160,6 +163,7 @@ static void print_header(FILE *fout, const char *field, const char *format)
 		WRITE_HEADER("last_seen");
 		WRITE_HEADER("threat");
 		WRITE_HEADER("provider");
+		WRITE_HEADER("fraud_score");
 
 		if (*end == ',') {
 			start = end + 1;
@@ -186,7 +190,7 @@ static void print_record(FILE *fout, const char *field, IP2ProxyRecord *record, 
 		if (strncmp(start, field_name, end - start) == 0) { \
 			const char *value = field; \
 			if (strcmp(value, NOT_SUPPORTED) == 0) { \
-				value = "N/A"; \
+				value = "NOT SUPPORTED"; \
 			} \
 			if (strcmp(format, "XML") == 0) { \
 				fprintf(fout, "<%s>%s</%s>", field_name, value, field_name); \
@@ -242,6 +246,7 @@ static void print_record(FILE *fout, const char *field, IP2ProxyRecord *record, 
 		WRITE_FIELD("last_seen", record->last_seen);
 		WRITE_FIELD("threat", record->threat);
 		WRITE_FIELD("provider", record->provider);
+		WRITE_FIELD("fraud_score", record->fraud_score);
 
 		if (*end == ',') {
 			start = end + 1;
@@ -272,7 +277,7 @@ int main(int argc, char *argv[])
 	IP2ProxyRecord *record = NULL;
 	FILE *fout = stdout;
 
-	field = "ip,is_proxy,proxy_type,country_code,country_name,region_name,city_name,isp,domain,as_number,as_name,last_seen,threat,provider";
+	field = "ip,is_proxy,proxy_type,country_code,country_name,region_name,city_name,isp,domain,as_number,as_name,last_seen,threat,provider,fraud_score";
 
 	for (i = 1; i < argc; i++) {
 		const char *argvi = argv[i];

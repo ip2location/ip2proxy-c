@@ -26,8 +26,8 @@ This library can be compiled and installed in different platform. Please refer t
 ###  Debian
 
 ```bash
-curl -LO https://github.com/ip2location/ip2proxy-c/releases/download/4.1.2/ip2proxy-4.1.2.deb
-sudo dpkg -i ip2proxy-4.1.2.deb
+curl -LO https://github.com/ip2location/ip2proxy-c/releases/download/4.2.0/ip2proxy-4.2.0.deb
+sudo dpkg -i ip2proxy-4.2.0.deb
 ```
 
 
@@ -41,14 +41,14 @@ sudo apt install ip2proxy
 
 ### Windows
 ```bash
-    Execute "vcvarsall.bat". (This file is part of Microsoft Visual C, not ip2location code) 
+    Execute "vcvarsall.bat". (This file is part of Microsoft Visual C, not ip2location code)
     nmake -f Makefile.win
 ```
 
 ### MacOS
 ```bash
     autoreconf -i -v --force
-    export CFLAGS=-I/usr/include/malloc 
+    export CFLAGS=-I/usr/include/malloc
     ./configure
     make
 ```
@@ -64,7 +64,7 @@ You can query the geolocation information from the IP2Proxy BIN database as belo
 
 IP2Proxy *IP2ProxyObj = IP2Proxy_open("../data/SAMPLE.BIN");
 IP2ProxyRecord *record = IP2Proxy_get_all(IP2ProxyObj, "161.11.12.13");
-printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
+printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
 	record->country_short,
 	record->country_long,
 	record->region,
@@ -78,7 +78,8 @@ printf("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
 	record->as_,
 	record->last_seen,
 	record->threat,
-	record->provider);
+	record->provider,
+	record->fraud_score);
 IP2Proxy_free_record(record);
 IP2Proxy_close(IP2ProxyObj);
 ```
