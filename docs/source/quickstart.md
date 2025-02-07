@@ -25,10 +25,24 @@ This library can be compiled and installed in different platform. Please refer t
 
 ###  Debian
 
+##### AMD64
+
 ```bash
-curl -LO https://github.com/ip2location/ip2proxy-c/releases/download/4.2.0/ip2proxy-4.2.0.deb
-sudo dpkg -i ip2proxy-4.2.0.deb
+curl -LO https://github.com/ip2location/ip2proxy-c/releases/download/4.2.0/ip2proxy-4.2.0-amd64.deb
+sudo dpkg -i ip2proxy-4.2.0-amd64.deb
 ```
+
+
+
+##### ARM64
+
+```bash
+curl -LO https://github.com/ip2location/ip2proxy-c/releases/download/4.2.0/ip2proxy-4.2.0-arm64.deb
+sudo dpkg -i ip2proxy-4.2.0-arm64.deb
+```
+
+
+
 
 
 ###  Ubuntu
