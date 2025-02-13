@@ -36,7 +36,7 @@ int main ()
 	}
 	*/
 
-	record = IP2Proxy_get_all(IP2ProxyObj, "8.8.8.8");
+	record = IP2Proxy_get_all(IP2ProxyObj, "23.83.130.186");
 
 	fprintf(stdout, "Module Version: %s\n", IP2Proxy_version_string());
 	fprintf(stdout, "Database Version: %s\n\n", IP2Proxy_get_database_version(IP2ProxyObj));
@@ -59,6 +59,6 @@ int main ()
 	IP2Proxy_close(IP2ProxyObj);
 	IP2Proxy_free_record(record);
 
-	return 1;
+	return 0;
 }
 
