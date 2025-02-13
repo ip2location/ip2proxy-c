@@ -1,6 +1,6 @@
 AC_PREREQ(2.59)
 
-AC_INIT([IP2Proxy], [4.1.1])
+AC_INIT([IP2Proxy], [4.2.1])
 AC_CONFIG_SRCDIR([libIP2Proxy/IP2Proxy.c])
 AM_INIT_AUTOMAKE
 
@@ -87,5 +87,5 @@ AC_DEFINE_DIR(SYSCONFDIR, [sysconfdir], [System configuration dir])
 AC_CONFIG_FILES([Makefile
                  libIP2Proxy/Makefile
                  test/Makefile])
-                 
+
 AC_OUTPUT
