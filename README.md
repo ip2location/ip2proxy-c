@@ -7,7 +7,7 @@ IP2Proxy database contains a list of daily-updated IP addresses which are being 
 You can access to the commercial databases from https://www.ip2location.com/proxy-database or use the free IP2Proxy LITE database from http://lite.ip2location.com
 
 For more details, please visit:
-[http://www.ip2location.com/ip2proxy/developers/c](http://www.ip2location.com/ip2proxy/developers/c)
+[https://www.ip2location.com/documentation/ip2proxy-libraries/c](https://www.ip2location.com/documentation/ip2proxy-libraries/c)
 
 
 
