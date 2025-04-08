@@ -56,7 +56,7 @@ Retrieve geolocation information for an IP address.
 | fraud_score      |     Potential risk score (0 - 99) associated with IP address. |
 ```
 
-```{py:function} IP2Proxy_open(record)
+```{py:function} IP2Proxy_free_record(record)
 Free the record object.
 
 :param object record: (Required) The IP2ProxyRecord result record object.
