@@ -623,7 +623,7 @@ static IP2ProxyRecord *IP2Proxy_get_record(IP2Proxy *handler, char *ip, uint32_t
 			return IP2Proxy_bad_record(NOT_SUPPORTED);
 		}
 
-		return IP2Proxy_get_ipv4_record(handler, mode, parsed_ip);
+		return record;
 	}
 	if (parsed_ip.version == 6) {
 		if (handler->ipv6_database_count == 0) {
