@@ -106,7 +106,7 @@ static void print_usage(const char *argv0)
 
 static void print_version()
 {
-	printf("IP2Proxy version 4.2.0\n");
+	printf("IP2Proxy version 4.2.1\n");
 }
 
 static void print_footer(FILE *fout, const char *field, const char *format)
