@@ -26,7 +26,7 @@ To learn more about installation, usage, and code examples, please visit the dev
 
 ## Sample BIN Databases
 
-* Download free IP2Proxy LITE databases at [https://lite.ip2location.com](https://lite.ip2location.com)  
+* Download free IP2Proxy LITE databases at [https://lite.ip2location.com](https://lite.ip2location.com)
 * Download IP2Proxy sample databases at [https://www.ip2location.com/ip2proxy/developers](https://www.ip2location.com/ip2proxy/developers)
 
 
@@ -82,6 +82,7 @@ ip2proxy -d [IP2PROXY BIN DATA PATH] -i [INPUT FILE PATH] --format XML
 |DCH|Data Center/Web Hosting/Transit|
 |SES|Search Engine Spider|
 |RSV|Reserved|
+|AIC|AI Crawler|
 
 ## Threat Type
 
@@ -94,5 +95,5 @@ ip2proxy -d [IP2PROXY BIN DATA PATH] -i [INPUT FILE PATH] --format XML
 
 ## Support
 
-Email: support@ip2location.com.  
+Email: support@ip2location.com.
 URL: [https://www.ip2location.com](https://www.ip2location.com)

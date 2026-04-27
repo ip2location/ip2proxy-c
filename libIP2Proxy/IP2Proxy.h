@@ -1,6 +1,6 @@
 /*
  * IP2Proxy C library is distributed under MIT license
- * Copyright (c) 2013-2025 IP2Location.com. support at ip2location dot com
+ * Copyright (c) 2013-2026 IP2Location.com. support at ip2location dot com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the MIT license
@@ -54,10 +54,10 @@ extern "C" {
 #endif
 #endif
 
-#define API_VERSION			4.2.1
+#define API_VERSION			4.3.0
 #define API_VERSION_MAJOR	4
-#define API_VERSION_MINOR	2
-#define API_VERSION_RELEASE	1
+#define API_VERSION_MINOR	3
+#define API_VERSION_RELEASE	0
 #define API_VERSION_NUMERIC (((API_VERSION_MAJOR * 100) + API_VERSION_MINOR) * 100 + API_VERSION_RELEASE)
 
 #define MAX_IPV4_RANGE	4294967295U

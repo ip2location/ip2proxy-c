@@ -1,6 +1,6 @@
 /*
  * IP2Proxy C library is distributed under MIT license
- * Copyright (c) 2013-2025 IP2Location.com. support at ip2location dot com
+ * Copyright (c) 2013-2026 IP2Location.com. support at ip2location dot com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the MIT license
@@ -458,7 +458,7 @@ static IP2ProxyRecord *IP2Proxy_read_record(IP2Proxy *handler, uint8_t* buffer, 
 					record->proxy_type = IP2Proxy_read_string(handle, IP2Proxy_read32_row(buffer, 4 * (IP2PROXY_PROXY_TYPE_POSITION[dbtype] - 2), mem_offset));
 				}
 
-				if (strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0) {
+				if (strcmp(record->proxy_type, "DCH") == 0 || strcmp(record->proxy_type, "SES") == 0 || strcmp(record->proxy_type, "AIC") == 0) {
 					record->is_proxy = "2";
 				} else {
 					record->is_proxy = "1";

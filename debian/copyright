@@ -4,11 +4,11 @@ Upstream-Contact: IP2Location <support@ip2location.com>
 Source: https://github.com/ip2location/ip2proxy-c.git
 
 Files: *
-Copyright: 2025 IP2Location <support@ip2location.com>
+Copyright: 2026 IP2Location <support@ip2location.com>
 License: MIT
 
 Files: debian/*
-Copyright: 2025 IP2Location <support@ip2location.com>
+Copyright: 2026 IP2Location <support@ip2location.com>
 License: MIT
 
 License: MIT
@@ -26,8 +26,8 @@ License: MIT
  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
- TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # Please also look if there are files or directories which have a
