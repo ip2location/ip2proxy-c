@@ -23,25 +23,23 @@ This library can be compiled and installed in different platform. Please refer t
     make
 ```
 
+
+
 ###  Debian
 
 ##### AMD64
 
 ```bash
-curl -LO https://github.com/ip2location/ip2proxy-c/releases/download/4.2.1/ip2proxy-4.2.1-amd64.deb
-sudo dpkg -i ip2proxy-4.2.1-amd64.deb
+curl -LO https://github.com/ip2location/ip2proxy-c/releases/download/x.y.z/ip2proxy-x.y.z-amd64.deb
+sudo dpkg -i ip2proxy-x.y.z-amd64.deb
 ```
-
-
 
 ##### ARM64
 
 ```bash
-curl -LO https://github.com/ip2location/ip2proxy-c/releases/download/4.2.1/ip2proxy-4.2.1-arm64.deb
-sudo dpkg -i ip2proxy-4.2.1-arm64.deb
+curl -LO https://github.com/ip2location/ip2proxy-c/releases/download/x.y.z/ip2proxy-x.y.z-arm64.deb
+sudo dpkg -i ip2proxy-x.y.z-arm64.deb
 ```
-
-
 
 
 
@@ -53,19 +51,43 @@ sudo apt update
 sudo apt install ip2proxy
 ```
 
+
+
+###  Fedora/AlmaLinux
+
+```bash
+sudo dnf install -y gcc make autoconf automake libtool
+curl -LO https://github.com/ip2location/ip2proxy-c/archive/refs/tags/x.y.z.tar.gz
+tar -xzf x.y.z.tar.gz
+cd ip2proxy-c-x.y.z
+autoreconf -i -v --force
+./configure
+make
+sudo make install
+sudo ldconfig
+```
+
+
+
 ### Windows
+
 ```bash
     Execute "vcvarsall.bat". (This file is part of Microsoft Visual C, not ip2location code)
     nmake -f Makefile.win
 ```
 
+
+
 ### MacOS
+
 ```bash
     autoreconf -i -v --force
     export CFLAGS=-I/usr/include/malloc
     ./configure
     make
 ```
+
+
 
 ## Sample Codes
 
